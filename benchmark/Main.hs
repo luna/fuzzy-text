@@ -13,7 +13,6 @@ import qualified New.Engine.Data.Match       as Match
 import qualified New.Engine.Data.Tree        as Tree
 import qualified New.Engine.Search           as Search
 
-
 import Data.Map.Strict           (Map)
 import Data.Text                 (Text)
 import New.Engine.Data.Database  (Database)
@@ -22,17 +21,17 @@ import New.Engine.Data.Match     (Match)
 import New.Engine.Data.Substring (Substring)
 import System.Random             (Random (random, randomR), mkStdGen, randomRs)
 
+import qualified Debug.Trace as Trace
 
 
 -------------------
 -- === Input === --
 -------------------
 
-
 -- === Config === --
 
 inputLength :: Int
-inputLength = 50000
+inputLength = 50
 
 minWordLength :: Int
 minWordLength = 3
@@ -77,7 +76,6 @@ inputRoot :: Tree.Node
 inputRoot = databaseInput ^. Database.tree
 {-# NOINLINE inputRoot #-}
 
-
 nextIndex :: Index
 nextIndex = Database.nextIndex databaseInput
 {-# NOINLINE nextIndex #-}
@@ -104,6 +102,8 @@ mergeInput = (substr1, substr2) where
     substr1  = mkSubstr positions1
     substr2  = mkSubstr positions2
 {-# NOINLINE mergeInput #-}
+
+
 
 -------------------
 -- === Utils === --
@@ -134,7 +134,6 @@ test_insertUpdateValue (txt, n, txtMap) = let
     in State.run @IndexMap updateVal txtMap
 {-# NOINLINE test_insertUpdateValue #-}
 
-
 test_nextIndex :: IndexMap -> Index
 test_nextIndex txtMap = State.eval @IndexMap Index.get txtMap
 {-# NOINLINE test_nextIndex #-}
@@ -146,7 +145,6 @@ test_lookup (txt, root) = Tree.lookup txt root
 test_lookupNode :: (Text, Tree.Node) -> Maybe Tree.Node
 test_lookupNode (txt, node) = Tree.lookupNode txt node
 {-# NOINLINE test_lookupNode #-}
-
 
 test_substrMerge :: (Substring, Substring) -> Substring
 test_substrMerge (s1, s2) = Substring.merge s1 s2
@@ -195,20 +193,20 @@ benchTree = benchmarks where
 {-# INLINE benchTree #-}
 
 benchSearch :: [Benchmark]
-benchSearch =
-    [ envBench "updateValue"
-        ( pure (randomHintNode, Match.mkState def, mempty))
-        test_searchUpdateValue
-    , envBench "substrMerge" (pure mergeInput)              test_substrMerge
-    , envBench "matchQuery"  (pure (randomHint, inputRoot)) test_matchQuery
-    ]
+benchSearch = [envBench "matchQuery"  (pure (randomHint, inputRoot)) test_matchQuery]
+    -- [ envBench "updateValue"
+        -- ( pure (randomHintNode, Match.mkState def, mempty))
+        -- test_searchUpdateValue
+    -- , envBench "substrMerge" (pure mergeInput)              test_substrMerge
+    -- , envBench "matchQuery"  (pure (randomHint, inputRoot)) test_matchQuery
+    -- ]
 {-# INLINE benchSearch #-}
 
 main :: IO ()
 main = let
     cfg = defaultConfig { Options.resamples = 10000 }
-    in defaultMainWith cfg
-        [ bgroup   "tree"   benchTree
-        , bgroup   "search" benchSearch
-        ]
+    in defaultMainWith cfg [bgroup "search" benchSearch]
+        -- [ bgroup   "tree"   benchTree
+        -- , bgroup   "search" benchSearch
+        -- ]
 

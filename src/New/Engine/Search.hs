@@ -122,24 +122,34 @@ matchQueryHead node state scoreMap = let
                 & Match.currentSubstring .~ updatedSubstring
             caseInsensitiveState = caseSensitiveState
                 & Match.currentKind %~ updateKind
+
             matchCaseSensitive :: Map Index Match -> Map Index Match
             matchCaseSensitive = \scoreMap' -> maybe
                 scoreMap'
                 (\n -> recursiveMatchQuery n caseSensitiveState scoreMap')
                 mayCaseSensitiveNextNode
+            {-# INLINEABLE matchCaseSensitive #-}
+
             matchCaseInsensitive :: Map Index Match -> Map Index Match
             matchCaseInsensitive = \scoreMap' -> maybe
                 scoreMap'
                 (\n -> recursiveMatchQuery n caseInsensitiveState scoreMap')
                 mayCaseInsensitiveNextNode
+            {-# INLINEABLE matchCaseInsensitive #-}
+
             defMatchers :: [Map Index Match -> Map Index Match]
             defMatchers   = [matchCaseSensitive]
+            {-# INLINEABLE defMatchers #-}
+
             extraMatchers :: [Map Index Match -> Map Index Match]
             extraMatchers = [matchCaseInsensitive]
+            {-# INLINEABLE extraMatchers #-}
+
             matchers :: [Map Index Match -> Map Index Match]
             matchers = defMatchers <> if isLetter h then extraMatchers else []
+            {-# INLINEABLE matchers #-}
             -- END --
-            in foldl (\acc matcher -> matcher acc) scoreMap matchers
+            in foldl' (\acc matcher -> matcher acc) scoreMap matchers
 
 test :: [Result Text]
 test = search "Tst" $ Database.mk ["Test", "Testing", "Tester", "Foo", "Foot"]
