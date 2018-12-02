@@ -5,9 +5,10 @@ import Prologue hiding (Index)
 
 import qualified Control.Monad.State.Layered as State
 import qualified Data.Map.Strict             as Map
+import qualified Data.IntMap                 as IntMap
 
 import Data.Map.Strict (Map)
-
+import Data.IntMap (IntMap)
 
 
 -------------------
@@ -20,14 +21,8 @@ import Data.Map.Strict (Map)
 newtype Index = Index Int deriving (Eq, Generic, Num, Ord, Show)
 makeClassy ''Index
 
-notExists :: Index
-notExists = -1
 
-instance Default Index where def = notExists
-instance NFData  Index
-
-
--- === Utils === --
+-- === API === --
 
 isInvalid :: Index -> Bool
 isInvalid = (< 0)
@@ -38,6 +33,18 @@ get = do
     let nextIndex = Index $! Map.size txtMap
     pure nextIndex
 {-# INLINE get #-}
+
+
+-- === Constants === --
+
+notExists :: Index
+notExists = -1
+
+
+-- === Instances === --
+
+instance Default Index where def = notExists
+instance NFData  Index
 
 
 

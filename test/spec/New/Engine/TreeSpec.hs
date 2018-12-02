@@ -6,6 +6,7 @@ import Test.Hspec
 import qualified Control.Monad.State.Layered as State
 import qualified Data.Map.Strict             as Map
 import qualified Data.Text                   as Text
+import qualified New.Engine.Data.Index       as Index
 import qualified New.Engine.Data.Tree        as Tree
 
 import Control.Exception     (throw)
@@ -42,7 +43,7 @@ recursiveCheckTreeStructure matchedPrefix indexMap dict = check where
             (Map.singleton (Text.drop 1 k) v)
             acc
     slicedMap = Map.foldlWithKey accFunction mempty indexMap
-    currentIndex = fromJust def $ Map.lookup mempty indexMap
+    currentIndex = fromJust Index.notExists $ Map.lookup mempty indexMap
     checkForException :: (Eq a, Show a, Typeable a)
         => (a -> a -> TreeStructureExceptionType) -> a -> a -> IO ()
     checkForException tpe a b = when (a /= b) $ throw

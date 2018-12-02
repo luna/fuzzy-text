@@ -59,7 +59,7 @@ mk input = Database hints' root where
     txtInput       = toTxt <$> input
     mkTree         = Tree.mk txtInput
     (root, txtMap) = State.run @IndexMap mkTree mempty
-    insertHint     = \acc hint -> let 
+    insertHint     = \acc hint -> let
         txt = hint ^. text
         in case Map.lookup txt txtMap of
             Nothing  -> acc
