@@ -33,7 +33,7 @@ data Node = Node
     } deriving (Eq, Generic, Show)
 makeLenses ''Node
 
-instance Default  Node where def   = Node def def
+instance Default  Node where def   = Node Index.notExists def
 instance HasIndex Node where index = node_index
 instance NFData   Node
 

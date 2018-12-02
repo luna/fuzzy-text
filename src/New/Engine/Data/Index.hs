@@ -43,7 +43,6 @@ notExists = -1
 
 -- === Instances === --
 
-instance Default Index where def = notExists
 instance NFData  Index
 
 

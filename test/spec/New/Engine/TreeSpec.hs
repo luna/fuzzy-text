@@ -80,19 +80,19 @@ spec = do
     describe "tree structure check tests" $ do
         it "works on empty tree" $ checkTreeStructure def def
         it "works with single letter" $ checkTreeStructure
-            (Node def $ Map.singleton 'a' $ Node 0 mempty)
+            (Node Index.notExists $ Map.singleton 'a' $ Node 0 mempty)
             (Map.singleton "a" 0)
         it "works with branched data" $ flip checkTreeStructure
             (fromList [("aa", 0), ("ab", 1)])
-            $ Node def $ Map.singleton
-                'a' $ Node def $ fromList
+            $ Node Index.notExists $ Map.singleton
+                'a' $ Node Index.notExists $ fromList
                     [ ('a', Node 0 mempty)
                     , ('b', Node 1 mempty) ]
         it "throws exception when map empty and dict not empty" $ shouldThrow
             (recursiveCheckTreeStructure
                 mempty
                 mempty
-                $ Node def $ Map.singleton 'a' $ Node 0 mempty)
+                $ Node Index.notExists $ Map.singleton 'a' $ Node 0 mempty)
             dictionaryStructureExceptionSelector
         it "throws exception when map not empty and dict empty" $ shouldThrow
             (recursiveCheckTreeStructure mempty (Map.singleton "a" 0) def)
@@ -101,8 +101,8 @@ spec = do
             (recursiveCheckTreeStructure
                 mempty
                 (Map.singleton "ab" 0)
-                $ Node def $ Map.singleton
-                'a' $ Node def $ fromList
+                $ Node Index.notExists $ Map.singleton
+                'a' $ Node Index.notExists $ fromList
                     [ ('a', Node 0 mempty)
                     , ('b', Node 1 mempty) ])
             dictionaryStructureExceptionSelector
@@ -119,3 +119,4 @@ spec = do
         it "values are in dictionary" $ let
             (root, idxMap) = State.run @IndexMap (Tree.mk ["aa", "ab"]) mempty
             in checkTreeStructure root idxMap
+
