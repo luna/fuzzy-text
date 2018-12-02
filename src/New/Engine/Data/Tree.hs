@@ -80,3 +80,4 @@ lookupNode :: Text -> Node -> Maybe Node
 lookupNode = \txt n -> case Text.uncons txt of
     Nothing       -> Just n
     Just (!h, !t) -> n ^? branches . at h . _Just . to (lookupNode t) . _Just
+

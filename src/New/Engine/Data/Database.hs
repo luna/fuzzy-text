@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module New.Engine.Data.Database where
 
 import Prologue hiding (Index)
@@ -17,7 +18,6 @@ import Data.Text    (Text)
 --------------------------
 -- === SearcherData === --
 --------------------------
-
 
 -- === Definition === --
 
@@ -77,3 +77,4 @@ textMap = to $ \d -> let
     txtToIdxMap  = fromList txtToIdxList
     in txtToIdxMap
 {-# INLINE textMap #-}
+

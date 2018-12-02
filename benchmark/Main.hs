@@ -18,10 +18,10 @@ import qualified New.Engine.Search           as Search
 import Data.Map.Strict           (Map)
 import Data.Text                 (Text)
 import New.Engine.Data.Database  (Database)
-import New.Engine.Data.Index     (Index (Index), IndexMap)
+import New.Engine.Data.Index     (Index, IndexMap)
 import New.Engine.Data.Match     (Match)
 import New.Engine.Data.Substring (Substring)
-import System.Random             (Random (random, randomR), mkStdGen, randomRs)
+import System.Random             ()
 
 
 
@@ -45,12 +45,6 @@ wordLengthRange = (minWordLength, maxWordLength)
 
 
 -- === Generated === --
-
-instance Random Index where
-    random g    = (Index randomInt, nextGen) where
-        (randomInt, nextGen) = random g
-    randomR (Index beg, Index end) g = (Index randomInt, nextGen) where
-        (randomInt, nextGen) = randomR (beg, end) g
 
 textInput :: [Text]
 textInput = do
