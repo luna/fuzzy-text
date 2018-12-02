@@ -21,7 +21,7 @@ import New.Engine.Data.Database  (Database)
 import New.Engine.Data.Index     (Index, IndexMap)
 import New.Engine.Data.Match     (Match)
 import New.Engine.Data.Substring (Substring)
-import System.Random             ()
+import System.Random             (Random (randomR), mkStdGen, randomRs)
 
 
 

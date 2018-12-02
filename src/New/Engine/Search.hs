@@ -1,4 +1,5 @@
 {-# LANGUAGE Strict #-}
+
 module New.Engine.Search where
 
 import Prologue hiding (Index)
@@ -24,7 +25,6 @@ import New.Engine.Data.Result   (Result (Result))
 --------------------
 -- === Search === --
 --------------------
-
 
 -- === API === --
 
@@ -63,7 +63,6 @@ recursiveMatchQuery node state scoreMap
     =  skipDataHead   node state
     $! matchQueryHead node state
     $! updateValue    node state scoreMap
-
 
 updateValue :: Tree.Node
     -> Match.State

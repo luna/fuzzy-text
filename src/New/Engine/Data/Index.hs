@@ -5,10 +5,8 @@ import Prologue hiding (Index)
 
 import qualified Control.Monad.State.Layered as State
 import qualified Data.Map.Strict             as Map
-import qualified Data.IntMap                 as IntMap
 
 import Data.Map.Strict (Map)
-import Data.IntMap (IntMap)
 
 
 -------------------
