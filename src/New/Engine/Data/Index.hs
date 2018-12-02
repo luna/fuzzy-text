@@ -18,8 +18,7 @@ import Data.IntMap (IntMap)
 
 -- === Definition === --
 
-newtype Index = Index Int deriving (Eq, Generic, Num, Ord, Show)
-makeClassy ''Index
+type Index = Int
 
 
 -- === API === --
@@ -28,10 +27,7 @@ isInvalid :: Index -> Bool
 isInvalid = (< 0)
 
 get :: State.Monad IndexMap m => m Index
-get = do
-    txtMap <- State.get @IndexMap
-    let nextIndex = Index $! Map.size txtMap
-    pure nextIndex
+get = State.get @IndexMap >>= pure . Map.size
 {-# INLINE get #-}
 
 
@@ -41,16 +37,10 @@ notExists :: Index
 notExists = -1
 
 
--- === Instances === --
-
-instance NFData  Index
-
-
 
 ---------------------
 -- === IndexMap === --
 ---------------------
-
 
 -- === Definition === --
 

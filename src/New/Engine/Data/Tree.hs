@@ -1,11 +1,6 @@
 {-# LANGUAGE Strict #-}
 
-module New.Engine.Data.Tree
-    ( module New.Engine.Data.Tree
-    , module X
-    ) where
-
-import New.Engine.Data.Index as X (HasIndex (index))
+module New.Engine.Data.Tree where
 
 import Prologue hiding (Index, lookup)
 
@@ -28,13 +23,12 @@ import New.Engine.Data.Index (Index, IndexMap)
 -- === Definition === --
 
 data Node = Node
-    { __index   :: Index
+    { _index   :: Index
     , _branches :: Map Char Node
     } deriving (Eq, Generic, Show)
 makeLenses ''Node
 
 instance Default  Node where def   = Node Index.notExists def
-instance HasIndex Node where index = node_index
 instance NFData   Node
 
 type Root = Node
