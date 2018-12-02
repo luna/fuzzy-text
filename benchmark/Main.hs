@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module Main where
 
 import Criterion.Main
@@ -21,7 +23,6 @@ import New.Engine.Data.Match     (Match)
 import New.Engine.Data.Substring (Substring)
 import System.Random             (Random (random, randomR), mkStdGen, randomRs)
 
-import qualified Debug.Trace as Trace
 
 
 -------------------
@@ -31,7 +32,7 @@ import qualified Debug.Trace as Trace
 -- === Config === --
 
 inputLength :: Int
-inputLength = 50
+inputLength = 50000
 
 minWordLength :: Int
 minWordLength = 3
@@ -193,20 +194,20 @@ benchTree = benchmarks where
 {-# INLINE benchTree #-}
 
 benchSearch :: [Benchmark]
-benchSearch = [envBench "matchQuery"  (pure (randomHint, inputRoot)) test_matchQuery]
-    -- [ envBench "updateValue"
-        -- ( pure (randomHintNode, Match.mkState def, mempty))
-        -- test_searchUpdateValue
-    -- , envBench "substrMerge" (pure mergeInput)              test_substrMerge
-    -- , envBench "matchQuery"  (pure (randomHint, inputRoot)) test_matchQuery
-    -- ]
+benchSearch =
+    [ envBench "updateValue"
+        ( pure (randomHintNode, Match.mkState def, mempty))
+        test_searchUpdateValue
+    , envBench "substrMerge" (pure mergeInput)              test_substrMerge
+    , envBench "matchQuery"  (pure (randomHint, inputRoot)) test_matchQuery
+    ]
 {-# INLINE benchSearch #-}
 
 main :: IO ()
 main = let
     cfg = defaultConfig { Options.resamples = 10000 }
-    in defaultMainWith cfg [bgroup "search" benchSearch]
-        -- [ bgroup   "tree"   benchTree
-        -- , bgroup   "search" benchSearch
-        -- ]
+    in defaultMainWith cfg
+        [ bgroup   "tree"   benchTree
+        , bgroup   "search" benchSearch
+        ]
 

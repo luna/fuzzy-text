@@ -116,9 +116,9 @@ matchQueryHead node state scoreMap = let
             substring  = state ^. Match.currentSubstring
             updatedSubstring = Substring.addPosition posInData substring
             caseSensitiveState = state
-                & Match.remainingSuffix .~ t
-                & Match.positionInData  %~ (+1)
-                & Match.positionInQuery %~ (+1)
+                & Match.remainingSuffix  .~ t
+                & Match.positionInData   %~ (+1)
+                & Match.positionInQuery  %~ (+1)
                 & Match.currentSubstring .~ updatedSubstring
             caseInsensitiveState = caseSensitiveState
                 & Match.currentKind %~ updateKind
