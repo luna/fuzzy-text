@@ -15,8 +15,8 @@ import Control.Lens (Getter, makePrisms, to)
 -- === Definition === --
 
 data Range = Range
-    { _begin :: !Int
-    , _len   :: !Int
+    { _begin :: Int
+    , _len   :: Int
     } deriving (Eq, Generic, Ord, Show)
 makeLenses ''Range
 
@@ -38,6 +38,8 @@ fromPosition pos = Range pos 1
 -----------------------
 -- === Substring === --
 -----------------------
+
+-- TODO [Ara] Swap the `[Range]` for `Data.Sequence Range` for better perf.
 
 -- === Definition === --
 
