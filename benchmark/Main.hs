@@ -117,38 +117,17 @@ envBench name pre fun = env pre $ \ ~input -> bench name $ nf fun input
 {-# INLINE envBench #-}
 
 defSearch :: SearcherData a => Text -> Database a -> [Result a]
-defSearch = \query database -> runIdentity
-        $! State.evalDefT @WordSuffixBonus
-        .  State.evalDefT @WordPrefixBonus
-        .  State.evalDefT @SuffixBonus
-        .  State.evalDefT @SequenceBonus
-        .  State.evalDefT @PrefixBonus
-        .  State.evalDefT @MismatchPenalty
-        $! Search.search query database (const 1)
+defSearch = \query database -> Search.search query database (const 1)
 {-# INLINE defSearch #-}
 
 defMatchQuery :: Text -> Tree.Root -> (Map Index Match)
-defMatchQuery = \query database -> runIdentity
-        $! State.evalDefT @MismatchPenalty
-        -- $! State.evalDefT @WordSuffixBonus
-        -- .  State.evalDefT @WordPrefixBonus
-        -- .  State.evalDefT @SuffixBonus
-        -- .  State.evalDefT @SequenceBonus
-        -- .  State.evalDefT @PrefixBonus
-        -- .  State.evalDefT @MismatchPenalty
-        $! Search.matchQuery query database
+defMatchQuery = \query database -> Search.matchQuery query database
 {-# INLINE defMatchQuery #-}
 
 defSearchUpdateValue
     :: Tree.Node -> Match.State -> Map Index Match -> (Map Index Match)
-defSearchUpdateValue = \node state resultMap -> runIdentity
-        $! State.evalDefT @WordSuffixBonus
-        .  State.evalDefT @WordPrefixBonus
-        .  State.evalDefT @SuffixBonus
-        .  State.evalDefT @SequenceBonus
-        .  State.evalDefT @PrefixBonus
-        .  State.evalDefT @MismatchPenalty
-        $! Search.updateValue node state resultMap
+defSearchUpdateValue = \node state resultMap ->
+    Search.updateValue node state resultMap
 {-# INLINE defSearchUpdateValue #-}
 
 

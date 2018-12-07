@@ -40,16 +40,16 @@ import Searcher.Engine.Metric.WordSuffixBonus ( WordSuffixBonus )
 
 -- === API === --
 
-search :: forall m a . (Metric.MonadMetrics DefaultMetrics m , SearcherData a)
-    => Text -> Database a -> (a -> Double) -> m [Result a]
-search query database hintWeightGetter = do
-    let root  = database ^. Database.tree
-        hints = database ^. Database.hints
-    matches <- matchQuery query root
-    let results  = concat $! Map.elems $! toResultMap hints matches
-        getScore = Result.getScore hintWeightGetter
-        compareRes r1 r2 = getScore r2 `compare` getScore r1
-    pure $! List.sortBy compareRes results
+search :: forall a . SearcherData a
+    => Text -> Database a -> (a -> Double) -> [Result a]
+search query database hintWeightGetter = let
+    root    = database ^. Database.tree
+    hints   = database ^. Database.hints
+    matches = matchQuery query root
+    results  = concat $! Map.elems $! toResultMap hints matches
+    getScore = Result.getScore hintWeightGetter
+    compareRes r1 r2 = getScore r2 `compare` getScore r1
+    in List.sortBy compareRes results
 {-# INLINE search #-}
 
 
@@ -82,8 +82,7 @@ toResultMap hintsMap matchesMap = let
     in Map.intersectionWith toResults hintsMap matchesMap
 {-# INLINE toResultMap #-}
 
-matchQuery :: forall m . Metric.MonadMetrics DefaultMetrics m
-    => Text -> Tree.Root -> m (Map Index Match)
+matchQuery :: Text -> Tree.Root -> Map Index Match
 matchQuery query root = recursiveMatchQuery root (Match.mkState query) mempty
 {-# INLINE matchQuery #-}
 
@@ -91,61 +90,46 @@ matchQuery query root = recursiveMatchQuery root (Match.mkState query) mempty
 -- query so `hread` could be matched with `head`
 -- [Ara] This should only come into play if there are no matches for a given
 -- query.
-recursiveMatchQuery :: forall m . Metric.MonadMetrics DefaultMetrics m
-    => Tree.Node
-    -> Match.State
+recursiveMatchQuery :: Tree.Node -> Match.State -> Map Index Match
     -> Map Index Match
-    -> m (Map Index Match)
 recursiveMatchQuery node state scoreMap
     =   skipDataHead   node state
-    =<< matchQueryHead node state
-    =<< updateValue    node state scoreMap
+    $ matchQueryHead node state
+    $ updateValue    node state scoreMap
 
-updateValue :: forall m . Metric.MonadMetrics DefaultMetrics m
-    => Tree.Node
-    -> Match.State
-    -> Map Index Match
-    -> m (Map Index Match)
-updateValue node state scoreMap = do
-    let idx          = node  ^. Tree.index
-        suffix       = state ^. Match.remainingSuffix
-        substring    = state ^. Match.currentSubstring
-        kind         = state ^. Match.currentKind
-        kind'        = if Text.null suffix then kind else Substring.Other
-        updatedState = state & Match.currentKind .~ kind'
-    if Index.isInvalid idx then pure scoreMap else do
-        -- score <- getMetrics @DefaultMetrics updatedState
-        let match = Match substring kind' 0 -- score
-        pure $! insertMatch idx match scoreMap
+updateValue :: Tree.Node -> Match.State -> Map Index Match -> Map Index Match
+updateValue node state scoreMap = let
+    idx          = node  ^. Tree.index
+    suffix       = state ^. Match.remainingSuffix
+    substring    = state ^. Match.currentSubstring
+    kind         = state ^. Match.currentKind
+    kind'        = if Text.null suffix then kind else Substring.Other
+    in if Index.isInvalid idx then scoreMap else let
+        match = Match substring kind' 0 -- score
+        in insertMatch idx match scoreMap
 {-# INLINE updateValue #-}
 
 insertMatch :: Index -> Match -> Map Index Match -> Map Index Match
 insertMatch i r m = if Index.isInvalid i then m else Map.insertWith max i r m
 {-# INLINE insertMatch #-}
 
-skipDataHead :: forall m . Metric.MonadMetrics DefaultMetrics m
-    => Tree.Node
+skipDataHead :: Tree.Node
     -> Match.State
     -> Map Index Match
-    -> m (Map Index Match)
+    -> Map Index Match
 skipDataHead node state scoreMap = let
     updatedState = state
         & Match.currentKind .~ Substring.FullMatch
         & Match.positionInData %~ (+1)
-    skipChar = \acc (c, n) -> transaction $! do
-        -- updateMetrics @DefaultMetrics c Match.NotMatched updatedState
-        recursiveMatchQuery n updatedState acc
-    in foldlM skipChar scoreMap $! toList $! node ^. Tree.branches
+    skipChar = \acc (c, n) -> recursiveMatchQuery n updatedState acc
+    in foldl' skipChar scoreMap $! toList $! node ^. Tree.branches
 
-matchQueryHead :: forall m . Metric.MonadMetrics DefaultMetrics m
-    => Tree.Node
-    -> Match.State
+matchQueryHead :: Tree.Node -> Match.State -> Map Index Match
     -> Map Index Match
-    -> m (Map Index Match)
 matchQueryHead node state scoreMap = let
     suffix = state ^. Match.remainingSuffix
     in case Text.uncons suffix of
-        Nothing            -> pure scoreMap
+        Nothing            -> scoreMap
         Just ((!h), (!t)) -> let
             branches     = node ^. Tree.branches
             -- This part should be lazy
@@ -165,45 +149,31 @@ matchQueryHead node state scoreMap = let
             caseInsensitiveState = caseSensitiveState
                 & Match.currentKind %~ updateKind
 
-            matchCaseSensitive
-                :: forall m . Metric.MonadMetrics DefaultMetrics m
-                => Map Index Match -> m (Map Index Match)
-            matchCaseSensitive = \scoreMap' -> transaction $! do
-                -- updateMetrics @DefaultMetrics h Match.Equal caseSensitiveState
-                maybe
-                    (pure scoreMap')
-                    (\n -> recursiveMatchQuery n caseSensitiveState scoreMap')
-                    mayCaseSensitiveNextNode
+            matchCaseSensitive :: Map Index Match -> Map Index Match
+            matchCaseSensitive = \scoreMap' -> maybe scoreMap'
+                (\n -> recursiveMatchQuery n caseSensitiveState scoreMap')
+                mayCaseSensitiveNextNode
             {-# INLINEABLE matchCaseSensitive #-}
 
-            matchCaseInsensitive
-                :: forall m . Metric.MonadMetrics DefaultMetrics m
-                => Map Index Match -> m (Map Index Match)
-            matchCaseInsensitive = \scoreMap' -> transaction $! do
-                -- updateMetrics @DefaultMetrics
-                    -- counterCaseH Match.CaseInsensitive caseInsensitiveState
-                maybe
-                    (pure scoreMap')
-                    (\n -> recursiveMatchQuery n caseInsensitiveState scoreMap')
-                    mayCaseInsensitiveNextNode
+            matchCaseInsensitive :: Map Index Match -> Map Index Match
+            matchCaseInsensitive = \scoreMap' -> maybe scoreMap'
+                (\n -> recursiveMatchQuery n caseInsensitiveState scoreMap')
+                mayCaseInsensitiveNextNode
             {-# INLINEABLE matchCaseInsensitive #-}
 
-            defMatchers :: forall m . Metric.MonadMetrics DefaultMetrics m
-                => [Map Index Match -> m (Map Index Match)]
+            defMatchers :: [Map Index Match -> Map Index Match]
             defMatchers = [matchCaseSensitive]
             {-# INLINEABLE defMatchers #-}
 
-            extraMatchers :: forall m . Metric.MonadMetrics DefaultMetrics m
-                => [Map Index Match -> m (Map Index Match)]
+            extraMatchers :: [Map Index Match -> Map Index Match]
             extraMatchers = [matchCaseInsensitive]
             {-# INLINEABLE extraMatchers #-}
 
-            matchers :: forall m . Metric.MonadMetrics DefaultMetrics m
-                => [Map Index Match -> m (Map Index Match)]
+            matchers :: [Map Index Match -> Map Index Match]
             matchers = defMatchers <> if isLetter h then extraMatchers else []
             {-# INLINEABLE matchers #-}
             -- END --
-            in foldlM (\acc matcher -> matcher acc) scoreMap $! matchers
+            in foldl' (\acc matcher -> matcher acc) scoreMap $! matchers
 
 type DefaultMetrics = '[MismatchPenalty]
     -- '[ MismatchPenalty
