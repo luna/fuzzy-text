@@ -34,16 +34,16 @@ instance NFData  SequenceBonus
 instance Metric  SequenceBonus where
     updateMetric _ _ _   = pure ()
 
-    getMetric matchState = let
-        revRange
-            = matchState ^. Match.currentSubstring . Substring.reversedRange
-        getRangeScore = \r -> let
-            rLen = r ^. Substring.len
-            rLenPred = rLen - 1
-            points   = rLen * rLenPred `quot` 2
-            in max 0 points
-        points      = foldl (\acc r -> acc + getRangeScore r) def revRange
-        mkScore     = \m -> Score $! m * points
-        multM       = State.use @SequenceBonus multiplier
-        in mkScore <$> multM
+    getMetric matchState = pure 0 -- let
+        -- revRange
+            -- = matchState ^. Match.currentSubstring . Substring.reversedRange
+        -- getRangeScore = \r -> let
+            -- rLen = r ^. Substring.len
+            -- rLenPred = rLen - 1
+            -- points   = rLen * rLenPred `quot` 2
+            -- in max 0 points
+        -- points      = foldl (\acc r -> acc + getRangeScore r) def revRange
+        -- mkScore     = \m -> Score $! m * points
+        -- multM       = State.use @SequenceBonus multiplier
+        -- in mkScore <$> multM
 

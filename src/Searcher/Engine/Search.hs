@@ -59,21 +59,22 @@ search query database hintWeightGetter = do
 -- we figure out how to do transaction without get and put
 transaction :: forall m a . Metric.MonadMetrics DefaultMetrics m
     => m a -> m a
-transaction action = do
-    mismatchPenalty <- State.get @MismatchPenalty
-    prefixBonus     <- State.get @PrefixBonus
-    sequenceBonus   <- State.get @SequenceBonus
-    suffixBonus     <- State.get @SuffixBonus
-    wordPrefixBonus <- State.get @WordPrefixBonus
-    wordSuffixBonus <- State.get @WordSuffixBonus
-    result <- action
-    State.put @MismatchPenalty mismatchPenalty
-    State.put @PrefixBonus     prefixBonus
-    State.put @SequenceBonus   sequenceBonus
-    State.put @SuffixBonus     suffixBonus
-    State.put @WordPrefixBonus wordPrefixBonus
-    State.put @WordSuffixBonus wordSuffixBonus
-    pure result
+transaction action = action
+    -- mismatchPenalty <- State.get @MismatchPenalty
+    -- prefixBonus     <- State.get @PrefixBonus
+    -- sequenceBonus   <- State.get @SequenceBonus
+    -- suffixBonus     <- State.get @SuffixBonus
+    -- wordPrefixBonus <- State.get @WordPrefixBonus
+    -- wordSuffixBonus <- State.get @WordSuffixBonus
+    -- result <- action
+    -- State.put @MismatchPenalty mismatchPenalty
+    -- State.put @PrefixBonus     prefixBonus
+    -- State.put @SequenceBonus   sequenceBonus
+    -- State.put @SuffixBonus     suffixBonus
+    -- State.put @WordPrefixBonus wordPrefixBonus
+    -- State.put @WordSuffixBonus wordSuffixBonus
+    -- pure result
+{-# INLINE transaction #-}
 
 toResultMap :: Map Index [a] -> Map Index Match -> Map Index [Result a]
 toResultMap hintsMap matchesMap = let
@@ -113,8 +114,8 @@ updateValue node state scoreMap = do
         kind'        = if Text.null suffix then kind else Substring.Other
         updatedState = state & Match.currentKind .~ kind'
     if Index.isInvalid idx then pure scoreMap else do
-        score <- getMetrics @DefaultMetrics updatedState
-        let match = Match substring kind' score
+        -- score <- getMetrics @DefaultMetrics updatedState
+        let match = Match substring kind' 0 -- score
         pure $! insertMatch idx match scoreMap
 {-# INLINE updateValue #-}
 
@@ -132,7 +133,7 @@ skipDataHead node state scoreMap = let
         & Match.currentKind .~ Substring.FullMatch
         & Match.positionInData %~ (+1)
     skipChar = \acc (c, n) -> transaction $! do
-        updateMetrics @DefaultMetrics c Match.NotMatched updatedState
+        -- updateMetrics @DefaultMetrics c Match.NotMatched updatedState
         recursiveMatchQuery n updatedState acc
     in foldlM skipChar scoreMap $! toList $! node ^. Tree.branches
 
@@ -168,7 +169,7 @@ matchQueryHead node state scoreMap = let
                 :: forall m . Metric.MonadMetrics DefaultMetrics m
                 => Map Index Match -> m (Map Index Match)
             matchCaseSensitive = \scoreMap' -> transaction $! do
-                updateMetrics @DefaultMetrics h Match.Equal caseSensitiveState
+                -- updateMetrics @DefaultMetrics h Match.Equal caseSensitiveState
                 maybe
                     (pure scoreMap')
                     (\n -> recursiveMatchQuery n caseSensitiveState scoreMap')
@@ -179,8 +180,8 @@ matchQueryHead node state scoreMap = let
                 :: forall m . Metric.MonadMetrics DefaultMetrics m
                 => Map Index Match -> m (Map Index Match)
             matchCaseInsensitive = \scoreMap' -> transaction $! do
-                updateMetrics @DefaultMetrics
-                    counterCaseH Match.CaseInsensitive caseInsensitiveState
+                -- updateMetrics @DefaultMetrics
+                    -- counterCaseH Match.CaseInsensitive caseInsensitiveState
                 maybe
                     (pure scoreMap')
                     (\n -> recursiveMatchQuery n caseInsensitiveState scoreMap')
@@ -204,13 +205,13 @@ matchQueryHead node state scoreMap = let
             -- END --
             in foldlM (\acc matcher -> matcher acc) scoreMap $! matchers
 
-type DefaultMetrics =
-    '[ MismatchPenalty
-    , PrefixBonus
-    , SequenceBonus
-    , SuffixBonus
-    , WordPrefixBonus
-    , WordSuffixBonus ]
+type DefaultMetrics = '[MismatchPenalty]
+    -- '[ MismatchPenalty
+    -- , PrefixBonus
+    -- , SequenceBonus
+    -- , SuffixBonus
+    -- , WordPrefixBonus
+    -- , WordSuffixBonus ]
 
 test :: [Result Text]
 test = let

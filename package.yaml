@@ -12,7 +12,7 @@ tests:
       - containers
       - fuzzy-text
       - hspec
-      - luna-studio-layered-state
+      - layered-state
       - lens
       - prologue
       - text
@@ -26,7 +26,7 @@ benchmarks:
       - containers
       - criterion
       - fuzzy-text
-      - luna-studio-layered-state
+      - layered-state
       - prologue
       - random
       - text
@@ -37,7 +37,7 @@ library:
   dependencies:
     - base
     - containers
-    - luna-studio-layered-state
+    - layered-state
     - lens
     - prologue
     - text

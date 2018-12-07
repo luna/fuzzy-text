@@ -44,38 +44,38 @@ instance Default WordPrefixBonus where def = WordPrefixBonus 6 def def
 instance NFData  WordPrefixBonus
 
 instance Metric  WordPrefixBonus where
-    updateMetric dataChar charMatch updatedState = do
-        bonusState <- State.get @WordPrefixBonus
-        let prefixes     = bonusState ^. wordsPrefixes
-            mayPrevChar  = bonusState ^. previousDataChar
-            posInData    = updatedState ^. Match.positionInData
-            revRange     = prefixes ^. Substring.reversedRange
-            mayLastRange = head revRange
-            mayRangeEnd  = view Substring.end <$> mayLastRange
-            appendChar   = \end -> if posInData - 1 == end
-                then Substring.addPosition end prefixes
-                else prefixes
-            appendWordHead = Substring.addPosition (posInData - 1) prefixes
-            isWordHead     = case mayPrevChar of
-                Nothing    -> True
-                Just prevC -> startsNewWord dataChar prevC
-            updatedPrefixes = if charMatch /= Match.NotMatched then if isWordHead
-                        then appendWordHead
-                        else maybe prefixes appendChar mayRangeEnd
-                    else prefixes
-            updatedBonusState = bonusState
-                & wordsPrefixes    .~ updatedPrefixes
-                & previousDataChar ?~ dataChar
-        State.put @WordPrefixBonus updatedBonusState
+    updateMetric dataChar charMatch updatedState = pure () -- do
+        -- bonusState <- State.get @WordPrefixBonus
+        -- let prefixes     = bonusState ^. wordsPrefixes
+            -- mayPrevChar  = bonusState ^. previousDataChar
+            -- posInData    = updatedState ^. Match.positionInData
+            -- revRange     = prefixes ^. Substring.reversedRange
+            -- mayLastRange = head revRange
+            -- mayRangeEnd  = view Substring.end <$> mayLastRange
+            -- appendChar   = \end -> if posInData - 1 == end
+                -- then Substring.addPosition end prefixes
+                -- else prefixes
+            -- appendWordHead = Substring.addPosition (posInData - 1) prefixes
+            -- isWordHead     = case mayPrevChar of
+                -- Nothing    -> True
+                -- Just prevC -> startsNewWord dataChar prevC
+            -- updatedPrefixes = if charMatch /= Match.NotMatched then if isWordHead
+                        -- then appendWordHead
+                        -- else maybe prefixes appendChar mayRangeEnd
+                    -- else prefixes
+            -- updatedBonusState = bonusState
+                -- & wordsPrefixes    .~ updatedPrefixes
+                -- & previousDataChar ?~ dataChar
+        -- State.put @WordPrefixBonus updatedBonusState
 
-    getMetric _ = do
-        mult     <- State.use @WordPrefixBonus multiplier
-        prefixes <- State.use @WordPrefixBonus wordsPrefixes
-        let revRange        = prefixes ^. Substring.reversedRange
-            accRangeLength  = \r -> let
-                rLen = r ^. Substring.len
-                in rLen * (rLen + 1) `quot` 2
-            appendAccLength = \acc r -> acc + accRangeLength r
-            points          = foldl appendAccLength def revRange
-        pure $! Score $! mult * points
+    getMetric _ = pure 0 -- do
+        -- mult     <- State.use @WordPrefixBonus multiplier
+        -- prefixes <- State.use @WordPrefixBonus wordsPrefixes
+        -- let revRange        = prefixes ^. Substring.reversedRange
+            -- accRangeLength  = \r -> let
+                -- rLen = r ^. Substring.len
+                -- in rLen * (rLen + 1) `quot` 2
+            -- appendAccLength = \acc r -> acc + accRangeLength r
+            -- points          = foldl appendAccLength def revRange
+        -- pure $! Score $! mult * points
 

@@ -45,44 +45,44 @@ instance Default WordSuffixBonus where def = WordSuffixBonus 3 def def def
 instance NFData  WordSuffixBonus
 
 instance Metric  WordSuffixBonus where
-    updateMetric dataChar matchKind updatedState = do
-        bonusState <- State.get @WordSuffixBonus
-        let posInData     = updatedState ^. Match.positionInData
-            suffixes      = bonusState ^. wordsSuffixes
-            revRange      = suffixes ^. Substring.reversedRange
-            mayPrevChar   = bonusState ^. previousDataChar
-            checkWordHead = \prev -> startsNewWord dataChar prev
-            isWordHead    = maybe True checkWordHead mayPrevChar
-            wordStart     = bonusState ^. lastWordStart
-            updateWordStart
-                = \prev -> if isWordHead then posInData - 1 else prev
-            addPosition  = let pos = posInData - 1 in
-                Substring.addPosition pos suffixes
-            deleteLastSuffix []                 = []
-            deleteLastSuffix prev@((!h) : (!t)) = let
-                hBeg   = h ^. Substring.begin
-                hEnd   = h ^. Substring.end
-                newLen = wordStart - hBeg
-                newH   = h & Substring.len .~ newLen
-                in if hEnd < wordStart then prev
-                    else if newLen > 0 then newH : t
-                    else t
-            updatedWordsSuffixes = if matchKind == Match.Equal then addPosition
-                else if isWordHead then suffixes
-                else Substring $! deleteLastSuffix revRange
-        State.modify_ @WordSuffixBonus $! \s -> s
-            & previousDataChar ?~ dataChar
-            & lastWordStart    %~ updateWordStart
-            & wordsSuffixes    .~ updatedWordsSuffixes
+    updateMetric dataChar matchKind updatedState = pure () -- do
+        -- bonusState <- State.get @WordSuffixBonus
+        -- let posInData     = updatedState ^. Match.positionInData
+            -- suffixes      = bonusState ^. wordsSuffixes
+            -- revRange      = suffixes ^. Substring.reversedRange
+            -- mayPrevChar   = bonusState ^. previousDataChar
+            -- checkWordHead = \prev -> startsNewWord dataChar prev
+            -- isWordHead    = maybe True checkWordHead mayPrevChar
+            -- wordStart     = bonusState ^. lastWordStart
+            -- updateWordStart
+                -- = \prev -> if isWordHead then posInData - 1 else prev
+            -- addPosition  = let pos = posInData - 1 in
+                -- Substring.addPosition pos suffixes
+            -- deleteLastSuffix []                 = []
+            -- deleteLastSuffix prev@((!h) : (!t)) = let
+                -- hBeg   = h ^. Substring.begin
+                -- hEnd   = h ^. Substring.end
+                -- newLen = wordStart - hBeg
+                -- newH   = h & Substring.len .~ newLen
+                -- in if hEnd < wordStart then prev
+                    -- else if newLen > 0 then newH : t
+                    -- else t
+            -- updatedWordsSuffixes = if matchKind == Match.Equal then addPosition
+                -- else if isWordHead then suffixes
+                -- else Substring $! deleteLastSuffix revRange
+        -- State.modify_ @WordSuffixBonus $! \s -> s
+            -- & previousDataChar ?~ dataChar
+            -- & lastWordStart    %~ updateWordStart
+            -- & wordsSuffixes    .~ updatedWordsSuffixes
 
-    getMetric _ = do
-        mult     <- State.use @WordSuffixBonus multiplier
-        suffixes <- State.use @WordSuffixBonus wordsSuffixes
-        let revRange        = suffixes ^. Substring.reversedRange
-            accRangeLength  = \r -> let
-                rLen = r ^. Substring.len
-                in rLen * (rLen + 1) `quot` 2
-            appendAccLength = \acc r -> acc + accRangeLength r
-            points          = foldl appendAccLength def revRange
-        pure $! Score $! mult * points
+    getMetric _ = pure 0 -- do
+        -- mult     <- State.use @WordSuffixBonus multiplier
+        -- suffixes <- State.use @WordSuffixBonus wordsSuffixes
+        -- let revRange        = suffixes ^. Substring.reversedRange
+            -- accRangeLength  = \r -> let
+                -- rLen = r ^. Substring.len
+                -- in rLen * (rLen + 1) `quot` 2
+            -- appendAccLength = \acc r -> acc + accRangeLength r
+            -- points          = foldl appendAccLength def revRange
+        -- pure $! Score $! mult * points
 
