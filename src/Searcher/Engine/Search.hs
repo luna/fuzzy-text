@@ -213,16 +213,16 @@ type DefaultMetrics = '[MismatchPenalty]
     -- , WordPrefixBonus
     -- , WordSuffixBonus ]
 
-test :: [Result Text]
-test = let
-    query    = "Tst"
-    database = Database.mk ["Test", "Testing", "Tester", "Foo", "Foot"]
-    in runIdentity
-        $! State.evalDefT @WordSuffixBonus
-        .  State.evalDefT @WordPrefixBonus
-        .  State.evalDefT @SuffixBonus
-        .  State.evalDefT @SequenceBonus
-        .  State.evalDefT @PrefixBonus
-        .  State.evalDefT @MismatchPenalty
-        $! search query database (const 1)
+-- test :: [Result Text]
+-- test = let
+    -- query    = "Tst"
+    -- database = Database.mk ["Test", "Testing", "Tester", "Foo", "Foot"]
+    -- in runIdentity
+        -- $! State.evalDefT @WordSuffixBonus
+        -- .  State.evalDefT @WordPrefixBonus
+        -- .  State.evalDefT @SuffixBonus
+        -- .  State.evalDefT @SequenceBonus
+        -- .  State.evalDefT @PrefixBonus
+        -- .  State.evalDefT @MismatchPenalty
+        -- $! search query database (const 1)
 

@@ -129,12 +129,13 @@ defSearch = \query database -> runIdentity
 
 defMatchQuery :: Text -> Tree.Root -> (Map Index Match)
 defMatchQuery = \query database -> runIdentity
-        $! State.evalDefT @WordSuffixBonus
-        .  State.evalDefT @WordPrefixBonus
-        .  State.evalDefT @SuffixBonus
-        .  State.evalDefT @SequenceBonus
-        .  State.evalDefT @PrefixBonus
-        .  State.evalDefT @MismatchPenalty
+        $! State.evalDefT @MismatchPenalty
+        -- $! State.evalDefT @WordSuffixBonus
+        -- .  State.evalDefT @WordPrefixBonus
+        -- .  State.evalDefT @SuffixBonus
+        -- .  State.evalDefT @SequenceBonus
+        -- .  State.evalDefT @PrefixBonus
+        -- .  State.evalDefT @MismatchPenalty
         $! Search.matchQuery query database
 {-# INLINE defMatchQuery #-}
 
