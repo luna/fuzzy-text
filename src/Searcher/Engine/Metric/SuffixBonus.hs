@@ -31,20 +31,20 @@ instance Default SuffixBonus where def = SuffixBonus 4
 instance NFData  SuffixBonus
 
 instance Metric  SuffixBonus where
-    updateMetric _ _ _ = undefined -- pure ()
+    updateMetric metricSt _ _ _ = metricSt
 
-    getMetric matchState = undefined -- let
-        -- posInData   = matchState ^. Match.positionInData
-        -- substring   = matchState ^. Match.currentSubstring
-        -- revRange    = substring ^. Substring.reversedRange
-        -- mayRange    = head revRange
-        -- points      = maybe 0 getPoints mayRange
-        -- getPoints   = \r -> let
-            -- rEnd    = r ^. Substring.end
-            -- rLen    = r ^. Substring.len
-            -- points' = rLen * (rLen + 1) `quot` 2
-            -- in if rEnd == posInData then points' else 0
-        -- mkScore     = \m -> Score $! m * points
-        -- multM       = State.use @SuffixBonus multiplier
-        -- in mkScore <$> multM
+    getMetric metricSt matchState = let
+        posInData   = matchState ^. Match.positionInData
+        substring   = matchState ^. Match.currentSubstring
+        revRange    = substring ^. Substring.reversedRange
+        mayRange    = head revRange
+        points      = maybe 0 getPoints mayRange
+        getPoints   = \r -> let
+            rEnd    = r ^. Substring.end
+            rLen    = r ^. Substring.len
+            points' = rLen * (rLen + 1) `quot` 2
+            in if rEnd == posInData then points' else 0
+        mkScore     = \m -> Score $! m * points
+        multM       = metricSt ^. multiplier
+        in mkScore multM
 
