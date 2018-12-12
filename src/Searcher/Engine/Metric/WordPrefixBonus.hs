@@ -44,7 +44,7 @@ instance Default WordPrefixBonus where def = WordPrefixBonus 6 def def
 instance NFData  WordPrefixBonus
 
 instance Metric  WordPrefixBonus where
-    updateMetric dataChar charMatch updatedState = pure () -- do
+    updateMetric dataChar charMatch updatedState = undefined -- do
         -- bonusState <- State.get @WordPrefixBonus
         -- let prefixes     = bonusState ^. wordsPrefixes
             -- mayPrevChar  = bonusState ^. previousDataChar
@@ -68,7 +68,7 @@ instance Metric  WordPrefixBonus where
                 -- & previousDataChar ?~ dataChar
         -- State.put @WordPrefixBonus updatedBonusState
 
-    getMetric _ = pure 0 -- do
+    getMetric _ = undefined -- do
         -- mult     <- State.use @WordPrefixBonus multiplier
         -- prefixes <- State.use @WordPrefixBonus wordsPrefixes
         -- let revRange        = prefixes ^. Substring.reversedRange

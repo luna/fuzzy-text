@@ -21,12 +21,7 @@ import Searcher.Engine.Data.Index             ( Index, IndexMap )
 import Searcher.Engine.Data.Match             ( Match )
 import Searcher.Engine.Data.Result            ( Result )
 import Searcher.Engine.Data.Substring         ( Substring )
-import Searcher.Engine.Metric.MismatchPenalty ( MismatchPenalty )
-import Searcher.Engine.Metric.PrefixBonus     ( PrefixBonus )
-import Searcher.Engine.Metric.SequenceBonus   ( SequenceBonus )
-import Searcher.Engine.Metric.SuffixBonus     ( SuffixBonus )
-import Searcher.Engine.Metric.WordPrefixBonus ( WordPrefixBonus )
-import Searcher.Engine.Metric.WordSuffixBonus ( WordSuffixBonus )
+import Searcher.Engine.Metric.DefaultMetric   ( DefaultMetric )
 import System.Random                          ( Random (randomR), mkStdGen
                                               , randomRs )
 
@@ -117,11 +112,13 @@ envBench name pre fun = env pre $ \ ~input -> bench name $ nf fun input
 {-# INLINE envBench #-}
 
 defSearch :: SearcherData a => Text -> Database a -> [Result a]
-defSearch = \query database -> Search.search query database (const 1)
+defSearch = \query database ->
+    Search.search query database (const 1) (def @DefaultMetric)
 {-# INLINE defSearch #-}
 
 defMatchQuery :: Text -> Tree.Root -> (Map Index Match)
-defMatchQuery = \query database -> Search.matchQuery query database
+defMatchQuery = \query database ->
+    Search.matchQuery query database (def @DefaultMetric)
 {-# INLINE defMatchQuery #-}
 
 defSearchUpdateValue

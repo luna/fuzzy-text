@@ -32,9 +32,9 @@ instance Default SequenceBonus where def = SequenceBonus 10
 instance NFData  SequenceBonus
 
 instance Metric  SequenceBonus where
-    updateMetric _ _ _   = pure ()
+    updateMetric _ _ _   = undefined -- pure ()
 
-    getMetric matchState = pure 0 -- let
+    getMetric matchState = undefined -- let
         -- revRange
             -- = matchState ^. Match.currentSubstring . Substring.reversedRange
         -- getRangeScore = \r -> let

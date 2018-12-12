@@ -4,7 +4,6 @@ module Searcher.Engine.Search where
 
 import Prologue hiding (Index)
 
-import qualified Control.Monad.State.Layered    as State
 import qualified Data.List                      as List
 import qualified Data.Map.Strict                as Map
 import qualified Data.Text                      as Text
@@ -13,7 +12,6 @@ import qualified Searcher.Engine.Data.Index     as Index
 import qualified Searcher.Engine.Data.Match     as Match
 import qualified Searcher.Engine.Data.Substring as Substring
 import qualified Searcher.Engine.Data.Tree      as Tree
-import qualified Searcher.Engine.Metric         as Metric
 import qualified Searcher.Engine.Data.Result    as Result
 
 import Data.Char                              ( isLetter, isUpper, toLower
@@ -23,13 +21,8 @@ import Searcher.Engine.Data.Database          ( Database, SearcherData )
 import Searcher.Engine.Data.Index             ( Index )
 import Searcher.Engine.Data.Match             ( Match (Match) )
 import Searcher.Engine.Data.Result            ( Result (Result) )
-import Searcher.Engine.Metric                 ( updateMetrics, getMetrics )
-import Searcher.Engine.Metric.MismatchPenalty ( MismatchPenalty )
-import Searcher.Engine.Metric.PrefixBonus     ( PrefixBonus )
-import Searcher.Engine.Metric.SequenceBonus   ( SequenceBonus )
-import Searcher.Engine.Metric.SuffixBonus     ( SuffixBonus )
-import Searcher.Engine.Metric.WordPrefixBonus ( WordPrefixBonus )
-import Searcher.Engine.Metric.WordSuffixBonus ( WordSuffixBonus )
+import Searcher.Engine.Data.Score             ( Score )
+import Searcher.Engine.Metric                 ( Metric )
 
 
 
@@ -37,15 +30,14 @@ import Searcher.Engine.Metric.WordSuffixBonus ( WordSuffixBonus )
 -- === Search === --
 --------------------
 
-
 -- === API === --
 
-search :: forall a . SearcherData a
-    => Text -> Database a -> (a -> Double) -> [Result a]
-search query database hintWeightGetter = let
+search :: forall a b . (SearcherData a, Metric b) => Text -> Database a
+    -> (a -> Double) -> b -> [Result a]
+search = \query database hintWeightGetter metricSt -> let
     root    = database ^. Database.tree
     hints   = database ^. Database.hints
-    matches = matchQuery query root
+    matches = matchQuery query root metricSt
     results  = concat $! Map.elems $! toResultMap hints matches
     getScore = Result.getScore hintWeightGetter
     compareRes r1 r2 = getScore r2 `compare` getScore r1
@@ -55,57 +47,37 @@ search query database hintWeightGetter = let
 
 -- === Utils === --
 
--- [TODO]: DefaultMetrics in all signatures should go back to ss once
--- we figure out how to do transaction without get and put
-transaction :: forall m a . Metric.MonadMetrics DefaultMetrics m
-    => m a -> m a
-transaction action = action
-    -- mismatchPenalty <- State.get @MismatchPenalty
-    -- prefixBonus     <- State.get @PrefixBonus
-    -- sequenceBonus   <- State.get @SequenceBonus
-    -- suffixBonus     <- State.get @SuffixBonus
-    -- wordPrefixBonus <- State.get @WordPrefixBonus
-    -- wordSuffixBonus <- State.get @WordSuffixBonus
-    -- result <- action
-    -- State.put @MismatchPenalty mismatchPenalty
-    -- State.put @PrefixBonus     prefixBonus
-    -- State.put @SequenceBonus   sequenceBonus
-    -- State.put @SuffixBonus     suffixBonus
-    -- State.put @WordPrefixBonus wordPrefixBonus
-    -- State.put @WordSuffixBonus wordSuffixBonus
-    -- pure result
-{-# INLINE transaction #-}
-
 toResultMap :: Map Index [a] -> Map Index Match -> Map Index [Result a]
 toResultMap hintsMap matchesMap = let
     toResults hints match = (\h -> Result h match) <$> hints
     in Map.intersectionWith toResults hintsMap matchesMap
 {-# INLINE toResultMap #-}
 
-matchQuery :: Text -> Tree.Root -> Map Index Match
-matchQuery query root = recursiveMatchQuery root (Match.mkState query) mempty
+matchQuery :: Metric a => Text -> Tree.Root -> a -> Map Index Match
+matchQuery = \query root metricSt ->
+    recursiveMatchQuery root (Match.mkState query) mempty metricSt
 {-# INLINE matchQuery #-}
 
 -- TODO [LJK]: If performance is good enough we could also try to skip chars in
 -- query so `hread` could be matched with `head`
 -- [Ara] This should only come into play if there are no matches for a given
 -- query.
-recursiveMatchQuery :: Tree.Node -> Match.State -> Map Index Match
-    -> Map Index Match
-recursiveMatchQuery node state scoreMap
-    =   skipDataHead   node state
-    $ matchQueryHead node state
-    $ updateValue    node state scoreMap
+recursiveMatchQuery :: Metric a => Tree.Node -> Match.State -> Map Index Match
+    -> a -> Map Index Match
+recursiveMatchQuery = \node state scoreMap metricSt -> let
+    scores = matchQueryHead node state vals metricSt
+    vals   = updateValue node state scoreMap
+    in skipDataHead node state scores metricSt
 
 updateValue :: Tree.Node -> Match.State -> Map Index Match -> Map Index Match
-updateValue node state scoreMap = let
+updateValue = \node state scoreMap -> let
     idx          = node  ^. Tree.index
     suffix       = state ^. Match.remainingSuffix
     substring    = state ^. Match.currentSubstring
     kind         = state ^. Match.currentKind
     kind'        = if Text.null suffix then kind else Substring.Other
     in if Index.isInvalid idx then scoreMap else let
-        match = Match substring kind' 0 -- score
+        match = Match substring kind' (0 :: Score)
         in insertMatch idx match scoreMap
 {-# INLINE updateValue #-}
 
@@ -113,23 +85,21 @@ insertMatch :: Index -> Match -> Map Index Match -> Map Index Match
 insertMatch i r m = if Index.isInvalid i then m else Map.insertWith max i r m
 {-# INLINE insertMatch #-}
 
-skipDataHead :: Tree.Node
-    -> Match.State
+skipDataHead :: Metric a => Tree.Node -> Match.State -> Map Index Match -> a
     -> Map Index Match
-    -> Map Index Match
-skipDataHead node state scoreMap = let
+skipDataHead = \node state scoreMap metricSt -> let
     updatedState = state
-        & Match.currentKind .~ Substring.FullMatch
+        & Match.currentKind    .~ Substring.FullMatch
         & Match.positionInData %~ (+1)
-    skipChar = \acc (c, n) -> recursiveMatchQuery n updatedState acc
+    skipChar = \acc (!_, !n) -> recursiveMatchQuery n updatedState acc metricSt
     in foldl' skipChar scoreMap $! toList $! node ^. Tree.branches
 
-matchQueryHead :: Tree.Node -> Match.State -> Map Index Match
+matchQueryHead :: Metric a => Tree.Node -> Match.State -> Map Index Match -> a
     -> Map Index Match
-matchQueryHead node state scoreMap = let
+matchQueryHead = \node state scoreMap metricSt -> let
     suffix = state ^. Match.remainingSuffix
     in case Text.uncons suffix of
-        Nothing            -> scoreMap
+        Nothing           -> scoreMap
         Just ((!h), (!t)) -> let
             branches     = node ^. Tree.branches
             -- This part should be lazy
@@ -151,13 +121,15 @@ matchQueryHead node state scoreMap = let
 
             matchCaseSensitive :: Map Index Match -> Map Index Match
             matchCaseSensitive = \scoreMap' -> maybe scoreMap'
-                (\n -> recursiveMatchQuery n caseSensitiveState scoreMap')
+                (\n -> recursiveMatchQuery n caseSensitiveState scoreMap'
+                    metricSt)
                 mayCaseSensitiveNextNode
             {-# INLINEABLE matchCaseSensitive #-}
 
             matchCaseInsensitive :: Map Index Match -> Map Index Match
             matchCaseInsensitive = \scoreMap' -> maybe scoreMap'
-                (\n -> recursiveMatchQuery n caseInsensitiveState scoreMap')
+                (\n -> recursiveMatchQuery n caseInsensitiveState scoreMap'
+                    metricSt)
                 mayCaseInsensitiveNextNode
             {-# INLINEABLE matchCaseInsensitive #-}
 
@@ -174,25 +146,4 @@ matchQueryHead node state scoreMap = let
             {-# INLINEABLE matchers #-}
             -- END --
             in foldl' (\acc matcher -> matcher acc) scoreMap $! matchers
-
-type DefaultMetrics = '[MismatchPenalty]
-    -- '[ MismatchPenalty
-    -- , PrefixBonus
-    -- , SequenceBonus
-    -- , SuffixBonus
-    -- , WordPrefixBonus
-    -- , WordSuffixBonus ]
-
--- test :: [Result Text]
--- test = let
-    -- query    = "Tst"
-    -- database = Database.mk ["Test", "Testing", "Tester", "Foo", "Foot"]
-    -- in runIdentity
-        -- $! State.evalDefT @WordSuffixBonus
-        -- .  State.evalDefT @WordPrefixBonus
-        -- .  State.evalDefT @SuffixBonus
-        -- .  State.evalDefT @SequenceBonus
-        -- .  State.evalDefT @PrefixBonus
-        -- .  State.evalDefT @MismatchPenalty
-        -- $! search query database (const 1)
 

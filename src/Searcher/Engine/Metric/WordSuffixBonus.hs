@@ -4,7 +4,6 @@ module Searcher.Engine.Metric.WordSuffixBonus where
 
 import Prologue
 
-import qualified Control.Monad.State.Layered    as State
 import qualified Searcher.Engine.Data.Match     as Match
 import qualified Searcher.Engine.Data.Substring as Substring
 
@@ -45,7 +44,7 @@ instance Default WordSuffixBonus where def = WordSuffixBonus 3 def def def
 instance NFData  WordSuffixBonus
 
 instance Metric  WordSuffixBonus where
-    updateMetric dataChar matchKind updatedState = pure () -- do
+    updateMetric dataChar matchKind updatedState = undefined -- do
         -- bonusState <- State.get @WordSuffixBonus
         -- let posInData     = updatedState ^. Match.positionInData
             -- suffixes      = bonusState ^. wordsSuffixes

@@ -32,9 +32,9 @@ instance Default PrefixBonus where def = PrefixBonus 12
 instance NFData  PrefixBonus
 
 instance Metric  PrefixBonus where
-    updateMetric _ _ _ = pure ()
+    updateMetric _ _ _ = undefined -- pure ()
 
-    getMetric matchState = pure 0 -- let
+    getMetric matchState = undefined -- let
         -- substring      = matchState ^. Match.currentSubstring
         -- mayPrefixRange = head $! substring ^. Substring.range
         -- getPoints      = \r -> let
