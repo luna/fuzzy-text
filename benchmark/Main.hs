@@ -182,10 +182,10 @@ test_matchQuery (query, root) = defMatchQuery query root
 main :: IO ()
 main = let
     cfg = defaultConfig { Options.resamples = 100 }
-    in defaultMainWith cfg [bgroup "search" benchSearch]
-        -- [ bgroup   "tree"   benchTree
-        -- , bgroup   "search" benchSearch
-        -- ]
+    in defaultMainWith cfg
+        [ bgroup   "tree"   benchTree
+        , bgroup   "search" benchSearch
+        ]
 
 benchTree :: [Benchmark]
 benchTree = benchmarks where
@@ -215,12 +215,12 @@ benchTree = benchmarks where
 {-# INLINE benchTree #-}
 
 benchSearch :: [Benchmark]
-benchSearch = [ envBench "matchQuery" (pure (randomHint, inputRoot)) test_matchQuery ]
-    -- [ envBench "updateValue"
-        -- ( pure (randomHintNode, Match.mkState def, mempty))
-        -- test_searchUpdateValue
-    -- , envBench "substrMerge" (pure mergeInput)              test_substrMerge
-    -- , envBench "matchQuery"  (pure (randomHint, inputRoot)) test_matchQuery
-    -- ]
+benchSearch =
+    [ envBench "updateValue"
+        ( pure (randomHintNode, Match.mkState def, mempty))
+        test_searchUpdateValue
+    , envBench "substrMerge" (pure mergeInput)              test_substrMerge
+    , envBench "matchQuery"  (pure (randomHint, inputRoot)) test_matchQuery
+    ]
 {-# INLINE benchSearch #-}
 
