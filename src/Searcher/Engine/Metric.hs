@@ -6,7 +6,6 @@ module Searcher.Engine.Metric where
 
 import Prologue hiding (Monad)
 
-import qualified Control.Monad.State.Layered as State
 import qualified Searcher.Engine.Data.Match  as Match
 
 import Searcher.Engine.Data.Score (Score)

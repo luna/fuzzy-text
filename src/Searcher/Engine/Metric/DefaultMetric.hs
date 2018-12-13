@@ -64,3 +64,5 @@ instance Metric DefaultMetric where
         where get :: Metric a => a -> Score
               get = \s -> getMetric s matchState
 
+-- makeMetric ''Name ''[MismatchPenalty, PrefixBonus, ..]
+
