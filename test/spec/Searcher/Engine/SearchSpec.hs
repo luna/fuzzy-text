@@ -5,7 +5,6 @@ module Searcher.Engine.SearchSpec (spec) where
 import Prologue hiding (Index)
 import Test.Hspec
 
-import qualified Control.Monad.State.Layered    as State
 import qualified Data.List                      as List
 import qualified Data.Map.Strict                as Map
 import qualified Searcher.Engine.Data.Database  as Database

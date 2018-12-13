@@ -33,6 +33,7 @@ extra-deps:
       commit: 1f5f7194f371ea17df3c2f56f1c85a8eb6f3a320
       subdirs:
           - lib/data-typemap
+          - lib/th-builder
           - lib/tuple-utils
           - lib/typelevel
 

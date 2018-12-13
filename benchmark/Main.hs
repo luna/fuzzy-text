@@ -124,7 +124,7 @@ defMatchQuery = \query database ->
 defSearchUpdateValue
     :: Tree.Node -> Match.State -> Map Index Match -> (Map Index Match)
 defSearchUpdateValue = \node state resultMap ->
-    Search.updateValue node state resultMap
+    Search.updateValue node state resultMap (def @DefaultMetric)
 {-# INLINE defSearchUpdateValue #-}
 
 
