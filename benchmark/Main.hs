@@ -4,6 +4,7 @@ import Prologue hiding (Index)
 
 import Criterion.Main
 
+-- TODO [LSR]
 import qualified Control.Monad.State.Layered    as State
 import qualified Criterion.Types                as Options
 import qualified Data.Map.Strict                as Map

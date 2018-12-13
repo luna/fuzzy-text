@@ -4,6 +4,7 @@ module Searcher.Engine.Data.Index where
 
 import Prologue hiding (Index)
 
+-- TODO [LSR]
 import qualified Control.Monad.State.Layered as State
 import qualified Data.Map.Strict             as Map
 
