@@ -15,7 +15,6 @@ ghc-options:
   fuzzy-text: -DGHCJS_BROWSER
 
 extra-deps:
-    - cond-0.4.1.1
     - container-1.1.5
     - convert-1.5
     - functor-utils-1.17.1
@@ -27,8 +26,6 @@ extra-deps:
     - typelevel-1.2.2
     - git: 'git@github.com:luna/nested-containers.git'
       commit: 8b37f1fbcb7e4cada7b8e28e0778f73c7b69f0a8
-    - git: 'git@github.com:luna/luna-studio-layered-state.git'
-      commit: 3c705415bc4e558f48aac13e73debcc290f4781f
 
 packages:
     - .

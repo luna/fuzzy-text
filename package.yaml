@@ -12,7 +12,6 @@ tests:
       - containers
       - fuzzy-text
       - hspec
-      - layered-state
       - lens
       - prologue
       - text
@@ -27,7 +26,6 @@ benchmarks:
       - containers
       - criterion
       - fuzzy-text
-      - layered-state
       - prologue
       - random
       - text
@@ -38,7 +36,6 @@ library:
   dependencies:
     - base
     - containers
-    - layered-state
     - lens
     - prologue
     - text
