@@ -40,7 +40,6 @@ library:
     - lens
     - prologue
     - text
-    - luna-data-typemap
 
 default-extensions:
     - AllowAmbiguousTypes
