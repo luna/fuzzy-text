@@ -4,8 +4,6 @@ module Searcher.Engine.Metric.PrefixBonus where
 
 import Prologue
 
--- TODO [LSR]
-import qualified Control.Monad.State.Layered    as State
 import qualified Searcher.Engine.Data.Match     as Match
 import qualified Searcher.Engine.Data.Substring as Substring
 
