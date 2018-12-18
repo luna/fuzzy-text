@@ -37,9 +37,10 @@ library:
     - base
     - containers
     - lens
+    - luna-data-typemap
+    - mtl
     - prologue
     - text
-    - mtl
 
 default-extensions:
     - AllowAmbiguousTypes

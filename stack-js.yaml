@@ -2,8 +2,6 @@ resolver: lts-11.22
 compiler: ghcjs-0.2.1.9008011_ghc-8.0.2
 compiler-check: match-exact
 
-allow-newer: true
-
 setup-info:
   ghcjs:
     source:
@@ -15,15 +13,24 @@ ghc-options:
   fuzzy-text: -DGHCJS_BROWSER
 
 extra-deps:
-    - container-1.1.5
-    - convert-1.5
-    - functor-utils-1.17.1
-    - impossible-1.1.3
-    - lens-utils-1.4.5
-    - monad-branch-1.0.3
-    - monoid-0.1.8
-    - prologue-3.2.4
-    - typelevel-1.2.2
+    - git: 'git@github.com:luna/convert.git'
+      commit: 69f5ff18fe453688ab0c932bb91f358e7622dde7
+    - git: 'git@github.com:luna/functor-utils.git'
+      commit: 822d083c67186d56c68a18a4558849590b81e994
+    - git: 'git@github.com:luna/impossible.git'
+      commit: 4615ea074b8b5d0ba7c45fd7056de349b8257d5b
+    - git: 'git@github.com:luna/lens-utils.git'
+      commit: 24f7ee7fa05379f4c507c6db272ec21049ae46ea
+    - git: 'git@github.com:luna/monad-branch.git'
+      commit: 054522f4bfcd9abebf0ddd87f33058738f0c660c
+    - git: 'git@github.com:luna/monoid.git'
+      commit: 11b010e27a56c46cbc1a7ac089642eac9e468af8
+    - git: 'git@github.com:luna/prologue.git'
+      commit: 56f70096ea500024a8a05433d555c5bf56fb7a47
+    - git: 'git@github.com:luna/typelevel.git'
+      commit: db4e4f883ae426d3ae8696cab3c932e58e0f4e9b
+    - git: 'git@github.com:luna/container.git'
+      commit: ca15fc1fdc19e6dac6e60d6a06773b75bb2a6fd5
     - git: 'git@github.com:luna/nested-containers.git'
       commit: 8b37f1fbcb7e4cada7b8e28e0778f73c7b69f0a8
 
