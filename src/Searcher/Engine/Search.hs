@@ -4,6 +4,7 @@ module Searcher.Engine.Search where
 
 import Prologue hiding (Index)
 
+import qualified Data.TypeMap.Strict            as TypeMap
 import qualified Data.List                      as List
 import qualified Data.Map.Strict                as Map
 import qualified Data.Text                      as Text
@@ -22,7 +23,41 @@ import Searcher.Engine.Data.Database          ( Database, SearcherData )
 import Searcher.Engine.Data.Index             ( Index )
 import Searcher.Engine.Data.Match             ( Match (Match) )
 import Searcher.Engine.Data.Result            ( Result (Result) )
+import Searcher.Engine.Data.Score             ( Score )
 import Searcher.Engine.Metric                 ( Metric )
+import Searcher.Engine.Metric.MismatchPenalty ( MismatchPenalty )
+import Searcher.Engine.Metric.PrefixBonus     ( PrefixBonus )
+import Searcher.Engine.Metric.SequenceBonus   ( SequenceBonus )
+import Searcher.Engine.Metric.SuffixBonus     ( SuffixBonus )
+import Searcher.Engine.Metric.WordPrefixBonus ( WordPrefixBonus )
+import Searcher.Engine.Metric.WordSuffixBonus ( WordSuffixBonus )
+
+
+------------- Testing --------------------------
+
+type MyMetrics =
+    '[ MismatchPenalty
+     , PrefixBonus
+     , SequenceBonus
+     , SuffixBonus
+     , WordPrefixBonus
+     , WordSuffixBonus ]
+
+myMetricSt2 :: TypeMap.TypeMap MyMetrics
+myMetricSt2 = Metric.genMetrics
+
+val :: MismatchPenalty
+val = TypeMap.getElem @MismatchPenalty myMetricSt2
+
+val2 :: TypeMap.TypeMap MyMetrics
+val2 = TypeMap.modifyElem_ @MismatchPenalty id myMetricSt2
+
+val3 ::
+  (MismatchPenalty,
+   TypeMap.TypeMap
+     '[PrefixBonus, SequenceBonus, SuffixBonus, WordPrefixBonus,
+       WordSuffixBonus])
+val3 = TypeMap.splitHead myMetricSt2
 
 
 
