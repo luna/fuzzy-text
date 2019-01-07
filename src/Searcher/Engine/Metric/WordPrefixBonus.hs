@@ -4,14 +4,14 @@ module Searcher.Engine.Metric.WordPrefixBonus where
 
 import Prologue
 
-import qualified Searcher.Engine.Data.Match       as Match
-import qualified Searcher.Engine.Data.Substring   as Substring
+import qualified Searcher.Engine.Data.Match     as Match
+import qualified Searcher.Engine.Data.Substring as Substring
+import qualified Searcher.Engine.Metric         as Metric
 
 import Control.Lens                   ((?~))
 import Data.Char                      (isLetter, isLower, isUpper)
 import Searcher.Engine.Data.Score     (Score (Score))
 import Searcher.Engine.Data.Substring (Substring)
-import Searcher.Engine.Metric         (MetricState (getMetric, updateMetric))
 
 
 
@@ -42,7 +42,7 @@ instance Default WordPrefixBonus where def = WordPrefixBonus 6 def def
 
 instance NFData WordPrefixBonus
 
-instance MetricState WordPrefixBonus where
+instance Metric.State WordPrefixBonus where
     updateMetric metricSt dataChar charMatch updatedState = let
         prefixes     = metricSt ^. wordsPrefixes
         mayPrevChar  = metricSt ^. previousDataChar

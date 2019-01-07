@@ -6,12 +6,12 @@ import Prologue
 
 import qualified Searcher.Engine.Data.Match     as Match
 import qualified Searcher.Engine.Data.Substring as Substring
+import qualified Searcher.Engine.Metric         as Metric
 
 import Control.Lens                   ((?~))
 import Data.Char                      (isLetter, isLower, isUpper)
 import Searcher.Engine.Data.Score     (Score (Score))
 import Searcher.Engine.Data.Substring (Substring (Substring))
-import Searcher.Engine.Metric         (MetricState (getMetric, updateMetric))
 
 
 
@@ -43,7 +43,7 @@ instance Default WordSuffixBonus where def = WordSuffixBonus 3 def def def
 
 instance NFData WordSuffixBonus
 
-instance MetricState WordSuffixBonus where
+instance Metric.State WordSuffixBonus where
     updateMetric metricSt dataChar matchKind updatedState = let
         posInData       = updatedState ^. Match.positionInData
         suffixes        = metricSt ^. wordsSuffixes

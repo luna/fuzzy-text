@@ -6,10 +6,10 @@ import Prologue
 
 import qualified Data.Text                   as Text
 import qualified Searcher.Engine.Data.Match  as Match
+import qualified Searcher.Engine.Metric      as Metric
 
 import Control.Lens               (to)
 import Searcher.Engine.Data.Score (Score (Score))
-import Searcher.Engine.Metric     (MetricState (getMetric, updateMetric))
 
 
 
@@ -32,7 +32,7 @@ instance Default MismatchPenalty where def = MismatchPenalty def $! -4
 
 instance NFData MismatchPenalty
 
-instance MetricState MismatchPenalty where
+instance Metric.State MismatchPenalty where
     updateMetric metricSt _ charMatch matchState = let
         finished  = matchState ^. Match.remainingSuffix . to Text.null
         isMatched = charMatch == Match.Equal || finished

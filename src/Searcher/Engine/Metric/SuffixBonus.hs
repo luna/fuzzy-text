@@ -6,9 +6,9 @@ import Prologue
 
 import qualified Searcher.Engine.Data.Match     as Match
 import qualified Searcher.Engine.Data.Substring as Substring
+import qualified Searcher.Engine.Metric         as Metric
 
 import Searcher.Engine.Data.Score (Score (Score))
-import Searcher.Engine.Metric     (MetricState (getMetric, updateMetric))
 
 
 
@@ -30,7 +30,7 @@ instance Default SuffixBonus where def = SuffixBonus 4
 
 instance NFData SuffixBonus
 
-instance MetricState SuffixBonus where
+instance Metric.State SuffixBonus where
     updateMetric metricSt _ _ _ = metricSt
 
     getMetric metricSt matchState = let

@@ -5,9 +5,9 @@ module Searcher.Engine.Metric.DefaultMetric where
 import Prologue
 
 import qualified Control.Lens as Lens
+import qualified Searcher.Engine.Metric         as Metric
 
 import Searcher.Engine.Data.Score             (Score)
-import Searcher.Engine.Metric                 (MetricState (getMetric, updateMetric))
 import Searcher.Engine.Metric.MismatchPenalty (MismatchPenalty)
 import Searcher.Engine.Metric.PrefixBonus     (PrefixBonus)
 import Searcher.Engine.Metric.SequenceBonus   (SequenceBonus)
@@ -42,7 +42,7 @@ instance Default DefaultMetric where
 
 instance NFData DefaultMetric
 
-instance MetricState DefaultMetric where
+instance Metric.State DefaultMetric where
     updateMetric metricState char matchKind matchState = metricState
         & mismatchPenalty %~ update
         & prefixBonus     %~ update
@@ -51,8 +51,8 @@ instance MetricState DefaultMetric where
         & wordPrefixBonus %~ update
         & wordSuffixBonus %~ update
 
-        where update :: MetricState a => a -> a
-              update = \s -> updateMetric s char matchKind matchState
+        where update :: Metric.State a => a -> a
+              update = \s -> Metric.updateMetric s char matchKind matchState
 
     getMetric metricState matchState = get (metricState ^. mismatchPenalty)
         + get (metricState ^. prefixBonus)
@@ -61,6 +61,6 @@ instance MetricState DefaultMetric where
         + get (metricState ^. wordPrefixBonus)
         + get (metricState ^. wordSuffixBonus)
 
-        where get :: MetricState a => a -> Score
-              get = \s -> getMetric s matchState
+        where get :: Metric.State a => a -> Score
+              get = \s -> Metric.getMetric s matchState
 

@@ -6,9 +6,9 @@
 -- use in the fuzzy-text searching algorithm.
 --
 -- A metric is a state type and accompanying set of functions (defined by the
--- `MetricState` typeclass) that allow for updating and retrieving the score
+-- `Metric.State` typeclass) that allow for updating and retrieving the score
 -- from a metric. Your state type should have an implementation of
--- `MetricState`, and this will allow the algorithm to use it internally via
+-- `Metric.State`, and this will allow the algorithm to use it internally via
 -- some type-level magic.
 --
 -- The essence of a metric is that it computes a score based on the input text
@@ -30,7 +30,7 @@
 -- 2. Implement `MetricState` for your type:
 --
 --      ```
---      instance MetricState DummyMetric where
+--      instance Metric.State DummyMetric where
 --          updateMetric st _ _ _ = st
 --          getMetric st _ = st ^. currentScore
 --      ```
@@ -53,18 +53,20 @@
 --      type MyStates = '[DummyMetric, DummyMetric2, DummyMetric3]
 --      ```
 --
--- TODO [Ara] Make this match the real final interface.
---
 -- 5. You can generate a default value of your metric by doing the following:
 --
 --      ```
 --      defaultVal = Metric.make @MyStates
 --      ```
 --
---    This has type `defaultVal :: Metric.Metric MyStates`.
+--    This has type `defaultVal :: Metric.Metric MyStates`, and can be modified
+--    by using the `modify`, `get` or `set` functions to create a starting
+--    value.
 --
 -- 6. Now you have this value it is as simple as passing it to your call to
---    `search` from the FuzzyText library.
+--    `searchWith` from the FuzzyText library. If you only want to use the
+--    default starting value for your Metric, then you can instead call `search`
+--    and explicitly pass the types in: `search @MyStates`.
 --
 -- This will then 'just work'. As the search is run, the update functions on
 -- all of your metrics will be called, and used to score the results returned by
@@ -89,8 +91,6 @@ import qualified Searcher.Engine.Data.Match  as Match
 import Data.TypeMap.Strict        (TypeMap)
 import Searcher.Engine.Data.Score (Score)
 
--- TODO [Ara] Rename MetricStates -> States and MetricState -> State
-
 
 
 --------------------
@@ -101,54 +101,79 @@ import Searcher.Engine.Data.Score (Score)
 
 type Metric ts = TypeMap ts
 
-class (Default a, NFData a) => MetricState a where
+class (Default a, NFData a) => State a where
     updateMetric :: a -> Char -> Match.CharMatch -> Match.State -> a
     getMetric :: a -> Match.State -> Score
 
-type family MetricStates ss :: Constraint where
-    MetricStates (s ': ss) = (MetricState s, MetricStates ss)
-    MetricStates '[]       = ()
+type family States ss :: Constraint where
+    States (s ': ss) = (State s, States ss)
+    States '[]       = ()
 
 
 -- === API === --
 
-make :: forall ts . (MetricStates ts, TypeMap.MakeDefault ts) => TypeMap ts
+type MakeDefault   ts = TypeMap.MakeDefault   ts
+type ElemEditor el ts = TypeMap.ElemEditor el ts
+type ElemGetter el ts = TypeMap.ElemGetter el ts
+type ElemSetter el ts = TypeMap.ElemSetter el ts
+
+make :: forall ts . (States ts, MakeDefault ts) => TypeMap ts
 make = TypeMap.makeDefault @ts
+{-# INLINE make #-}
+
+getElem :: forall el ts. (States ts, ElemGetter el ts) => Metric ts
+    -> el
+getElem = TypeMap.getElem @el @ts
+{-# INLINE getElem #-}
+
+setElem :: forall el ts. (States ts, ElemSetter el ts) => el
+    -> Metric ts -> Metric ts
+setElem = TypeMap.setElem @el @ts
+{-# INLINE setElem #-}
+
+modifyElem :: forall el ts. (States ts, ElemEditor el ts) => (el -> el)
+    -> Metric ts -> Metric ts
+modifyElem = TypeMap.modifyElem_ @el @ts
+{-# INLINE modifyElem #-}
 
 
 -- === Update === --
 
-class MetricStates ts => Update (ts :: [Type]) where
+class States ts => Update (ts :: [Type]) where
     update :: Metric ts -> Char -> Match.CharMatch -> Match.State -> Metric ts
 
-instance ( TypeMap.Prependable t ts, TypeMap.SplitHead t ts, MetricState t
-         , MetricStates ts, Update ts )
+instance ( TypeMap.Prependable t ts, TypeMap.SplitHead t ts, State t
+         , States ts, Update ts )
     => Update ((t ': ts) :: [Type]) where
     update map char matchKind matchState = let
         (currentSt, mapRest) = TypeMap.splitHead map
         newCurrentState      = updateMetric currentSt char matchKind matchState
         updatedRest          = update mapRest char matchKind matchState
         in TypeMap.prepend newCurrentState updatedRest
+    {-# INLINE update #-}
 
 instance Update ('[] :: [Type]) where
     update _ _ _ _ = TypeMap.empty
+    {-# INLINE update #-}
 
 
 -- === Get === --
 
-class MetricStates ts => Get (ts :: [Type]) where
+class States ts => Get (ts :: [Type]) where
     get :: Metric ts -> Match.State -> Score
 
-instance (TypeMap.SplitHead t ts, MetricState t, MetricStates ts, Get ts)
+instance (TypeMap.SplitHead t ts, State t, States ts, Get ts)
     => Get ((t ': ts) :: [Type]) where
     get map matchState = let
         (currentSt, mapRest) = TypeMap.splitHead map
         restScore            = get mapRest matchState
         currentScore         = getMetric currentSt matchState
         in currentScore + restScore
+    {-# INLINE get #-}
 
 instance Get ('[] :: [Type]) where
     get _ _ = def @Score
+    {-# INLINE get #-}
 
 
 -- === Edit === --
