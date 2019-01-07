@@ -23,8 +23,7 @@ import Searcher.Engine.Data.Database          ( Database, SearcherData )
 import Searcher.Engine.Data.Index             ( Index )
 import Searcher.Engine.Data.Match             ( Match (Match) )
 import Searcher.Engine.Data.Result            ( Result (Result) )
-import Searcher.Engine.Data.Score             ( Score )
-import Searcher.Engine.Metric                 ( Metric, Metrics )
+import Searcher.Engine.Metric                 ( MetricState )
 import Searcher.Engine.Metric.MismatchPenalty ( MismatchPenalty )
 import Searcher.Engine.Metric.PrefixBonus     ( PrefixBonus )
 import Searcher.Engine.Metric.SequenceBonus   ( SequenceBonus )
@@ -69,7 +68,7 @@ val3 = TypeMap.splitHead myMetricSt2
 
 -- === API === --
 
-search :: forall a ts . (SearcherData a, Metric ts) => Text -> Database a
+search :: forall a ts . (SearcherData a, MetricState ts) => Text -> Database a
     -> (a -> Double) -> ts -> [Result a]
 search = \query database hintWeightGetter metricSt -> let
     root    = database ^. Database.tree
@@ -90,7 +89,7 @@ toResultMap hintsMap matchesMap = let
     in Map.intersectionWith toResults hintsMap matchesMap
 {-# INLINE toResultMap #-}
 
-matchQuery :: Metric a => Text -> Tree.Root -> a -> Map Index Match
+matchQuery :: MetricState a => Text -> Tree.Root -> a -> Map Index Match
 matchQuery = \query root metricSt ->
     recursiveMatchQuery root (Match.mkState query) mempty metricSt
 {-# INLINE matchQuery #-}
@@ -99,14 +98,14 @@ matchQuery = \query root metricSt ->
 -- query so `hread` could be matched with `head`
 -- [Ara] This should only come into play if there are no matches for a given
 -- query.
-recursiveMatchQuery :: Metric a => Tree.Node -> Match.State -> Map Index Match
+recursiveMatchQuery :: MetricState a => Tree.Node -> Match.State -> Map Index Match
     -> a -> Map Index Match
 recursiveMatchQuery = \node state scoreMap metricSt -> let
     scores = matchQueryHead node state vals metricSt
     vals   = updateValue node state scoreMap metricSt
     in skipDataHead node state scores metricSt
 
-updateValue :: Metric a => Tree.Node -> Match.State -> Map Index Match -> a
+updateValue :: MetricState a => Tree.Node -> Match.State -> Map Index Match -> a
     -> Map Index Match
 updateValue = \node state scoreMap matchSt -> let
     idx          = node  ^. Tree.index
@@ -125,7 +124,7 @@ insertMatch :: Index -> Match -> Map Index Match -> Map Index Match
 insertMatch i r m = if Index.isInvalid i then m else Map.insertWith max i r m
 {-# INLINE insertMatch #-}
 
-skipDataHead :: Metric a => Tree.Node -> Match.State -> Map Index Match -> a
+skipDataHead :: MetricState a => Tree.Node -> Match.State -> Map Index Match -> a
     -> Map Index Match
 skipDataHead = \node state scoreMap metricSt -> let
     updatedState = state
@@ -136,7 +135,7 @@ skipDataHead = \node state scoreMap metricSt -> let
         in recursiveMatchQuery n updatedState acc newMetSt
     in foldl' skipChar scoreMap $! toList $! node ^. Tree.branches
 
-matchQueryHead :: Metric a => Tree.Node -> Match.State -> Map Index Match -> a
+matchQueryHead :: MetricState a => Tree.Node -> Match.State -> Map Index Match -> a
     -> Map Index Match
 matchQueryHead = \node state scoreMap metricSt -> let
     suffix = state ^. Match.remainingSuffix

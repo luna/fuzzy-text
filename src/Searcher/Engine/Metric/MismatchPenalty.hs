@@ -9,7 +9,7 @@ import qualified Searcher.Engine.Data.Match  as Match
 
 import Control.Lens               (to)
 import Searcher.Engine.Data.Score (Score (Score))
-import Searcher.Engine.Metric     (Metric (getMetric, updateMetric))
+import Searcher.Engine.Metric     (MetricState (getMetric, updateMetric))
 
 
 
@@ -30,9 +30,9 @@ makeLenses ''MismatchPenalty
 
 instance Default MismatchPenalty where def = MismatchPenalty def $! -4
 
-instance NFData  MismatchPenalty
+instance NFData MismatchPenalty
 
-instance Metric  MismatchPenalty where
+instance MetricState MismatchPenalty where
     updateMetric metricSt _ charMatch matchState = let
         finished  = matchState ^. Match.remainingSuffix . to Text.null
         isMatched = charMatch == Match.Equal || finished

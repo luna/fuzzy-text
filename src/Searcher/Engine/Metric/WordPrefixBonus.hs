@@ -11,7 +11,7 @@ import Control.Lens                   ((?~))
 import Data.Char                      (isLetter, isLower, isUpper)
 import Searcher.Engine.Data.Score     (Score (Score))
 import Searcher.Engine.Data.Substring (Substring)
-import Searcher.Engine.Metric         (Metric (getMetric, updateMetric))
+import Searcher.Engine.Metric         (MetricState (getMetric, updateMetric))
 
 
 
@@ -42,7 +42,7 @@ instance Default WordPrefixBonus where def = WordPrefixBonus 6 def def
 
 instance NFData WordPrefixBonus
 
-instance Metric WordPrefixBonus where
+instance MetricState WordPrefixBonus where
     updateMetric metricSt dataChar charMatch updatedState = let
         prefixes     = metricSt ^. wordsPrefixes
         mayPrevChar  = metricSt ^. previousDataChar

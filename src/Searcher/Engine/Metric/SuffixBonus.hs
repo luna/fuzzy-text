@@ -8,7 +8,7 @@ import qualified Searcher.Engine.Data.Match     as Match
 import qualified Searcher.Engine.Data.Substring as Substring
 
 import Searcher.Engine.Data.Score (Score (Score))
-import Searcher.Engine.Metric     (Metric (getMetric, updateMetric))
+import Searcher.Engine.Metric     (MetricState (getMetric, updateMetric))
 
 
 
@@ -28,9 +28,9 @@ makeLenses ''SuffixBonus
 
 instance Default SuffixBonus where def = SuffixBonus 4
 
-instance NFData  SuffixBonus
+instance NFData SuffixBonus
 
-instance Metric  SuffixBonus where
+instance MetricState SuffixBonus where
     updateMetric metricSt _ _ _ = metricSt
 
     getMetric metricSt matchState = let

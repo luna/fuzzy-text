@@ -10,7 +10,7 @@ import qualified Searcher.Engine.Data.Substring as Substring
 import qualified Searcher.Engine.Metric         as Metric
 
 import Searcher.Engine.Data.Score (Score)
-import Searcher.Engine.Metric     (Metric, MetricAggregate)
+import Searcher.Engine.Metric     (Metric, MetricState(updateMetric, getMetric))
 
 
 
@@ -28,7 +28,7 @@ instance Default DummyMetric where
 
 instance NFData DummyMetric
 
-instance Metric DummyMetric where
+instance MetricState DummyMetric where
     updateMetric st _ _ _ = st & currentScore %~ (+1)
 
     getMetric st _ = st ^. currentScore
@@ -43,7 +43,7 @@ instance Default DummyMetric2 where
 
 instance NFData DummyMetric2
 
-instance Metric DummyMetric2 where
+instance MetricState DummyMetric2 where
     updateMetric st _ _ _ = st & currentScore2 %~ (+1)
 
     getMetric st _ = st ^. currentScore2
@@ -58,7 +58,7 @@ instance Default DummyMetric3 where
 
 instance NFData DummyMetric3
 
-instance Metric DummyMetric3 where
+instance MetricState DummyMetric3 where
     updateMetric st _ _ _ = st & currentScore3 %~ (+1)
 
     getMetric st _ = st ^. currentScore3
@@ -70,12 +70,12 @@ mockedMatchState = Match.State mempty substring Substring.Equal 1 1 where
 expectedScore :: Score
 expectedScore = Score.Score 3
 
-type MyMetrics = '[DummyMetric, DummyMetric2, DummyMetric3]
+type MyStates = '[DummyMetric, DummyMetric2, DummyMetric3]
 
-combinedMetricUpdate :: MetricAggregate MyMetrics -> MetricAggregate MyMetrics
+combinedMetricUpdate :: Metric MyStates -> Metric MyStates
 combinedMetricUpdate ms = Metric.update ms 'a' Match.Equal mockedMatchState
 
-splitMetricUpdate :: MetricAggregate MyMetrics -> MetricAggregate MyMetrics
+splitMetricUpdate :: Metric MyStates -> Metric MyStates
 splitMetricUpdate ms = let
     st1 = Metric.updateMetric (TypeMap.getElem @DummyMetric ms) 'a' Match.Equal
         mockedMatchState
@@ -87,15 +87,15 @@ splitMetricUpdate ms = let
 
 combinedUpdateAndGet :: Score
 combinedUpdateAndGet =
-    Metric.get (combinedMetricUpdate $ Metric.make @MyMetrics) mockedMatchState
+    Metric.get (combinedMetricUpdate $ Metric.make @MyStates) mockedMatchState
 
 splitUpdateAndGet :: Score
 splitUpdateAndGet =
-    Metric.get (splitMetricUpdate $ Metric.make @MyMetrics) mockedMatchState
+    Metric.get (splitMetricUpdate $ Metric.make @MyStates) mockedMatchState
 
 dualUpdateAndGet :: Score
 dualUpdateAndGet = Metric.get res mockedMatchState where
-    res = combinedMetricUpdate . combinedMetricUpdate $ Metric.make @MyMetrics
+    res = combinedMetricUpdate . combinedMetricUpdate $ Metric.make @MyStates
 
 
 
