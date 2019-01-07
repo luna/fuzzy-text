@@ -89,6 +89,8 @@ import qualified Searcher.Engine.Data.Match  as Match
 import Data.TypeMap.Strict        (TypeMap)
 import Searcher.Engine.Data.Score (Score)
 
+-- TODO [Ara] Rename MetricStates -> States and MetricState -> State
+
 
 
 --------------------
@@ -117,8 +119,7 @@ make = TypeMap.makeDefault @ts
 -- === Update === --
 
 class MetricStates ts => Update (ts :: [Type]) where
-    update :: TypeMap ts -> Char -> Match.CharMatch -> Match.State
-        -> TypeMap ts
+    update :: Metric ts -> Char -> Match.CharMatch -> Match.State -> Metric ts
 
 instance ( TypeMap.Prependable t ts, TypeMap.SplitHead t ts, MetricState t
          , MetricStates ts, Update ts )
@@ -136,7 +137,7 @@ instance Update ('[] :: [Type]) where
 -- === Get === --
 
 class MetricStates ts => Get (ts :: [Type]) where
-    get :: TypeMap ts -> Match.State -> Score
+    get :: Metric ts -> Match.State -> Score
 
 instance (TypeMap.SplitHead t ts, MetricState t, MetricStates ts, Get ts)
     => Get ((t ': ts) :: [Type]) where
@@ -148,4 +149,8 @@ instance (TypeMap.SplitHead t ts, MetricState t, MetricStates ts, Get ts)
 
 instance Get ('[] :: [Type]) where
     get _ _ = def @Score
+
+
+-- === Edit === --
+type Edit ts = (Update ts, Get ts)
 

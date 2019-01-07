@@ -4,7 +4,6 @@ module Searcher.Engine.Search where
 
 import Prologue hiding (Index)
 
-import qualified Data.TypeMap.Strict            as TypeMap
 import qualified Data.List                      as List
 import qualified Data.Map.Strict                as Map
 import qualified Data.Text                      as Text
@@ -23,42 +22,9 @@ import Searcher.Engine.Data.Database          ( Database, SearcherData )
 import Searcher.Engine.Data.Index             ( Index )
 import Searcher.Engine.Data.Match             ( Match (Match) )
 import Searcher.Engine.Data.Result            ( Result (Result) )
-import Searcher.Engine.Metric                 ( MetricState )
-import Searcher.Engine.Metric.MismatchPenalty ( MismatchPenalty )
-import Searcher.Engine.Metric.PrefixBonus     ( PrefixBonus )
-import Searcher.Engine.Metric.SequenceBonus   ( SequenceBonus )
-import Searcher.Engine.Metric.SuffixBonus     ( SuffixBonus )
-import Searcher.Engine.Metric.WordPrefixBonus ( WordPrefixBonus )
-import Searcher.Engine.Metric.WordSuffixBonus ( WordSuffixBonus )
-
+import Searcher.Engine.Metric                 ( Metric, MetricState, MetricStates )
 
 -- Pre-integration perf for matchQuery ~= 70ms
-
-------------- Testing --------------------------
-
-type MyMetrics =
-    '[ MismatchPenalty
-     , PrefixBonus
-     , SequenceBonus
-     , SuffixBonus
-     , WordPrefixBonus
-     , WordSuffixBonus ]
-
-myMetricSt2 :: TypeMap.TypeMap MyMetrics
-myMetricSt2 = Metric.make
-
-val :: MismatchPenalty
-val = TypeMap.getElem @MismatchPenalty myMetricSt2
-
-val2 :: TypeMap.TypeMap MyMetrics
-val2 = TypeMap.modifyElem_ @MismatchPenalty id myMetricSt2
-
-val3 ::
-  (MismatchPenalty,
-   TypeMap.TypeMap
-     '[PrefixBonus, SequenceBonus, SuffixBonus, WordPrefixBonus,
-       WordSuffixBonus])
-val3 = TypeMap.splitHead myMetricSt2
 
 
 
@@ -68,17 +34,22 @@ val3 = TypeMap.splitHead myMetricSt2
 
 -- === API === --
 
-search :: forall a ts . (SearcherData a, MetricState ts) => Text -> Database a
-    -> (a -> Double) -> ts -> [Result a]
-search = \query database hintWeightGetter metricSt -> let
+search :: forall a ts . (SearcherData a, MetricStates ts) => Text -> Database a
+    -> (a -> Double) -> [Result a]
+search = \query database hintWeightGetter -> undefined
+{-# INLINE search #-}
+
+searchWith :: forall a ts . (SearcherData a, Metric.Edit ts, MetricStates ts) => Text -> Database a
+    -> (a -> Double) -> Metric ts -> [Result a]
+searchWith = \query database hintWeightGetter metric -> let
     root    = database ^. Database.tree
     hints   = database ^. Database.hints
-    matches = matchQuery query root metricSt
+    matches = matchQuery query root metric
     results  = concat $! Map.elems $! toResultMap hints matches
     getScore = Result.getScore hintWeightGetter
     compareRes r1 r2 = getScore r2 `compare` getScore r1
     in List.sortBy compareRes results
-{-# INLINE search #-}
+{-# INLINE searchWith #-}
 
 
 -- === Utils === --
@@ -89,23 +60,23 @@ toResultMap hintsMap matchesMap = let
     in Map.intersectionWith toResults hintsMap matchesMap
 {-# INLINE toResultMap #-}
 
-matchQuery :: MetricState a => Text -> Tree.Root -> a -> Map Index Match
-matchQuery = \query root metricSt ->
-    recursiveMatchQuery root (Match.mkState query) mempty metricSt
+matchQuery :: (Metric.Edit ts, MetricStates ts) => Text -> Tree.Root -> Metric ts -> Map Index Match
+matchQuery = \query root metric ->
+    recursiveMatchQuery root (Match.mkState query) mempty metric
 {-# INLINE matchQuery #-}
 
 -- TODO [LJK]: If performance is good enough we could also try to skip chars in
 -- query so `hread` could be matched with `head`
 -- [Ara] This should only come into play if there are no matches for a given
 -- query.
-recursiveMatchQuery :: MetricState a => Tree.Node -> Match.State -> Map Index Match
-    -> a -> Map Index Match
-recursiveMatchQuery = \node state scoreMap metricSt -> let
-    scores = matchQueryHead node state vals metricSt
-    vals   = updateValue node state scoreMap metricSt
-    in skipDataHead node state scores metricSt
+recursiveMatchQuery :: (Metric.Edit ts, MetricStates ts) => Tree.Node -> Match.State -> Map Index Match
+    -> Metric ts -> Map Index Match
+recursiveMatchQuery = \node state scoreMap metric -> let
+    scores = matchQueryHead node state vals metric
+    vals   = updateValue node state scoreMap metric
+    in skipDataHead node state scores metric
 
-updateValue :: MetricState a => Tree.Node -> Match.State -> Map Index Match -> a
+updateValue :: (Metric.Get ts, MetricStates ts) => Tree.Node -> Match.State -> Map Index Match -> Metric ts
     -> Map Index Match
 updateValue = \node state scoreMap matchSt -> let
     idx          = node  ^. Tree.index
@@ -115,7 +86,7 @@ updateValue = \node state scoreMap matchSt -> let
     kind'        = if Text.null suffix then kind else Substring.Other
     updatedState = state & Match.currentKind .~ kind'
     in if Index.isInvalid idx then scoreMap else let
-        score = Metric.getMetric matchSt updatedState
+        score = Metric.get matchSt updatedState
         match = Match substring kind' score
         in insertMatch idx match scoreMap
 {-# INLINE updateValue #-}
@@ -124,18 +95,18 @@ insertMatch :: Index -> Match -> Map Index Match -> Map Index Match
 insertMatch i r m = if Index.isInvalid i then m else Map.insertWith max i r m
 {-# INLINE insertMatch #-}
 
-skipDataHead :: MetricState a => Tree.Node -> Match.State -> Map Index Match -> a
+skipDataHead :: (Metric.Edit ts, MetricStates ts) => Tree.Node -> Match.State -> Map Index Match -> Metric ts
     -> Map Index Match
-skipDataHead = \node state scoreMap metricSt -> let
+skipDataHead = \node state scoreMap metric -> let
     updatedState = state
         & Match.currentKind    .~ Substring.FullMatch
         & Match.positionInData %~ (+1)
     skipChar = \acc (!c, !n) -> let
-        newMetSt = Metric.updateMetric metricSt c Match.NotMatched updatedState
+        newMetSt = Metric.update metric c Match.NotMatched updatedState
         in recursiveMatchQuery n updatedState acc newMetSt
     in foldl' skipChar scoreMap $! toList $! node ^. Tree.branches
 
-matchQueryHead :: MetricState a => Tree.Node -> Match.State -> Map Index Match -> a
+matchQueryHead :: (Metric.Edit ts, MetricStates ts) => Tree.Node -> Match.State -> Map Index Match -> Metric ts
     -> Map Index Match
 matchQueryHead = \node state scoreMap metricSt -> let
     suffix = state ^. Match.remainingSuffix
@@ -162,7 +133,7 @@ matchQueryHead = \node state scoreMap metricSt -> let
 
             matchCaseSensitive :: Map Index Match -> Map Index Match
             matchCaseSensitive = \scoreMap' -> let
-                newMetSt = Metric.updateMetric metricSt h Match.Equal
+                newMetSt = Metric.update metricSt h Match.Equal
                     caseSensitiveState
                 in maybe scoreMap'
                     (\n -> recursiveMatchQuery n caseSensitiveState scoreMap'
@@ -172,7 +143,7 @@ matchQueryHead = \node state scoreMap metricSt -> let
 
             matchCaseInsensitive :: Map Index Match -> Map Index Match
             matchCaseInsensitive = \scoreMap' -> let
-                newMetSt = Metric.updateMetric metricSt counterCaseH
+                newMetSt = Metric.update metricSt counterCaseH
                     Match.CaseInsensitive caseInsensitiveState
                 in maybe scoreMap'
                     (\n -> recursiveMatchQuery n caseInsensitiveState scoreMap'
