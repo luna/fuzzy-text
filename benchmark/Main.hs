@@ -189,6 +189,36 @@ test_matchQuery (query, root) = defMatchQuery query root
 
 
 
+
+-------- Testing ---------------------------------
+
+type TestSts =
+    '[ MismatchPenalty
+     , PrefixBonus
+     , SequenceBonus
+     , SuffixBonus
+     , WordPrefixBonus
+     , WordSuffixBonus ]
+
+testTyMap :: forall ts . (Metric.States ts, Metric.Edit ts) => Metric.Metric ts
+    -> Int -> Int
+testTyMap metric score = if score < 1 then score else
+    testTyMap metric (score - 1)
+
+testDirect :: MismatchPenalty -> PrefixBonus -> SequenceBonus -> SuffixBonus
+    -> WordPrefixBonus -> WordSuffixBonus -> Int -> Int
+testDirect a b c d e f score = if score < 1 then score else
+    testDirect a b c d e f (score - 1)
+
+thresh :: Int
+thresh = 100000000
+
+mockedMatchState :: Match.State
+mockedMatchState = Match.State mempty substring Substring.Equal 1 1 where
+    substring = Substring.singleton $! Substring.fromPosition 0
+
+
+
 ------------------------
 -- === Benchmarks === --
 ------------------------
@@ -197,9 +227,17 @@ main :: IO ()
 main = let
     cfg = defaultConfig { Options.resamples = 100 }
     in defaultMainWith cfg
-        [ bgroup   "tree"   benchTree
-        , bgroup   "search" benchSearch
-        ]
+        [ bgroup "test" benchTest ]
+        -- [ bgroup   "tree"   benchTree
+        -- , bgroup   "search" benchSearch
+        -- ]
+
+benchTest :: [Benchmark]
+benchTest =
+    [ bench "TypeMap"
+        $ nf (testTyMap (Metric.make @TestSts)) thresh
+    , bench "Direct"
+        $ nf (testDirect def def def def def def) thresh ]
 
 benchTree :: [Benchmark]
 benchTree = benchmarks where
