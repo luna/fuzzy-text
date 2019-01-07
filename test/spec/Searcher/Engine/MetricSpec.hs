@@ -10,7 +10,7 @@ import qualified Searcher.Engine.Data.Substring as Substring
 import qualified Searcher.Engine.Metric         as Metric
 
 import Searcher.Engine.Data.Score (Score)
-import Searcher.Engine.Metric     (Metric, MetricState(updateMetric, getMetric))
+import Searcher.Engine.Metric     (Metric)
 
 
 
@@ -28,7 +28,7 @@ instance Default DummyMetric where
 
 instance NFData DummyMetric
 
-instance MetricState DummyMetric where
+instance Metric.State DummyMetric where
     updateMetric st _ _ _ = st & currentScore %~ (+1)
 
     getMetric st _ = st ^. currentScore
@@ -43,7 +43,7 @@ instance Default DummyMetric2 where
 
 instance NFData DummyMetric2
 
-instance MetricState DummyMetric2 where
+instance Metric.State DummyMetric2 where
     updateMetric st _ _ _ = st & currentScore2 %~ (+1)
 
     getMetric st _ = st ^. currentScore2
@@ -58,7 +58,7 @@ instance Default DummyMetric3 where
 
 instance NFData DummyMetric3
 
-instance MetricState DummyMetric3 where
+instance Metric.State DummyMetric3 where
     updateMetric st _ _ _ = st & currentScore3 %~ (+1)
 
     getMetric st _ = st ^. currentScore3

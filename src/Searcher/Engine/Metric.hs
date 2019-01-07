@@ -145,10 +145,10 @@ class States ts => Update (ts :: [Type]) where
 instance ( TypeMap.Prependable t ts, TypeMap.SplitHead t ts, State t
          , States ts, Update ts )
     => Update ((t ': ts) :: [Type]) where
-    update map char matchKind matchState = let
-        (currentSt, mapRest) = TypeMap.splitHead map
-        newCurrentState      = updateMetric currentSt char matchKind matchState
-        updatedRest          = update mapRest char matchKind matchState
+    update tyMap char matchKind matchState = let
+        (currentSt, tyMapRest) = TypeMap.splitHead tyMap
+        newCurrentState        = updateMetric currentSt char matchKind matchState
+        updatedRest            = update tyMapRest char matchKind matchState
         in TypeMap.prepend newCurrentState updatedRest
     {-# INLINE update #-}
 
@@ -164,10 +164,10 @@ class States ts => Get (ts :: [Type]) where
 
 instance (TypeMap.SplitHead t ts, State t, States ts, Get ts)
     => Get ((t ': ts) :: [Type]) where
-    get map matchState = let
-        (currentSt, mapRest) = TypeMap.splitHead map
-        restScore            = get mapRest matchState
-        currentScore         = getMetric currentSt matchState
+    get tyMap matchState = let
+        (currentSt, tyMapRest) = TypeMap.splitHead tyMap
+        restScore              = get tyMapRest matchState
+        currentScore           = getMetric currentSt matchState
         in currentScore + restScore
     {-# INLINE get #-}
 

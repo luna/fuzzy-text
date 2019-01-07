@@ -26,12 +26,15 @@ makeLenses ''SuffixBonus
 
 -- === Instances === --
 
-instance Default SuffixBonus where def = SuffixBonus 4
+instance Default SuffixBonus where
+    def = SuffixBonus 4
+    {-# INLINE def #-}
 
 instance NFData SuffixBonus
 
 instance Metric.State SuffixBonus where
     updateMetric metricSt _ _ _ = metricSt
+    {-# INLINE updateMetric #-}
 
     getMetric metricSt matchState = let
         posInData   = matchState ^. Match.positionInData
@@ -47,4 +50,5 @@ instance Metric.State SuffixBonus where
         mkScore     = \m -> Score $! m * points
         multM       = metricSt ^. multiplier
         in mkScore multM
+    {-# INLINE getMetric #-}
 

@@ -26,12 +26,15 @@ makeLenses ''PrefixBonus
 
 -- === Instances === --
 
-instance Default PrefixBonus where def = PrefixBonus 12
+instance Default PrefixBonus where
+    def = PrefixBonus 12
+    {-# INLINE def #-}
 
 instance NFData PrefixBonus
 
 instance Metric.State PrefixBonus where
     updateMetric metricSt _ _ _ = metricSt
+    {-# INLINE updateMetric #-}
 
     getMetric metricSt matchState = let
         substring      = matchState ^. Match.currentSubstring
@@ -44,4 +47,5 @@ instance Metric.State PrefixBonus where
         mkScore = \m -> Score $! m * points
         multM   = metricSt ^. multiplier
         in mkScore multM
+    {-# INLINE getMetric #-}
 

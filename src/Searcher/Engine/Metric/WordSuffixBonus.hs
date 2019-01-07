@@ -35,11 +35,14 @@ makeLenses ''WordSuffixBonus
 startsNewWord :: Char -> Char -> Bool
 startsNewWord c prevC = let xor a b = (a && not b) || (not a && b)
     in (isLetter prevC `xor` isLetter c) || (isLower prevC && isUpper c)
+{-# INLINE startsNewWord #-}
 
 
 -- === Instances === --
 
-instance Default WordSuffixBonus where def = WordSuffixBonus 3 def def def
+instance Default WordSuffixBonus where
+    def = WordSuffixBonus 3 def def def
+    {-# INLINE def #-}
 
 instance NFData WordSuffixBonus
 
@@ -73,6 +76,7 @@ instance Metric.State WordSuffixBonus where
             & previousDataChar ?~ dataChar
             & lastWordStart    %~ updateWordStart
             & wordsSuffixes    .~ updatedWordsSuffixes
+    {-# INLINE updateMetric #-}
 
     getMetric metricSt _ = let
         revRange        = metricSt ^. wordsSuffixes ^. Substring.reversedRange
@@ -81,4 +85,5 @@ instance Metric.State WordSuffixBonus where
         appendAccLength = \acc r -> acc + accRangeLength r
         points = foldl' appendAccLength def revRange
         in Score $! (metricSt ^. multiplier) * points
+    {-# INLINE getMetric #-}
 

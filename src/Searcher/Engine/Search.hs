@@ -33,7 +33,7 @@ import Searcher.Engine.Metric        (Metric)
 
 -- === API === --
 
-search :: forall a ts . ( SearcherData a, Metric.MakeDefault ts, Metric.Edit ts
+search :: forall ts a . ( SearcherData a, Metric.MakeDefault ts, Metric.Edit ts
                         , Metric.States ts )
     => Text -> Database a -> (a -> Double) -> [Result a]
 search = \query database hintWeightGetter ->

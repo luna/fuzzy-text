@@ -28,7 +28,9 @@ makeLenses ''MismatchPenalty
 
 -- === Instances === --
 
-instance Default MismatchPenalty where def = MismatchPenalty def $! -4
+instance Default MismatchPenalty where
+    def = MismatchPenalty def $! -4
+    {-# INLINE def #-}
 
 instance NFData MismatchPenalty
 
@@ -39,7 +41,10 @@ instance Metric.State MismatchPenalty where
         in if isMatched
             then metricSt
             else metricSt & mismatched %~ (+1)
+    {-# INLINE updateMetric #-}
 
     getMetric metricSt _ =
         Score $! (metricSt ^. multiplier) * (metricSt ^. mismatched)
+    {-# INLINE getMetric #-}
+
 
