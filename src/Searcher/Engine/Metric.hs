@@ -145,7 +145,7 @@ class States ts => Update (ts :: [Type]) where
 instance ( TypeMap.Prependable t ts, TypeMap.SplitHead t ts, State t
          , States ts, Update ts )
     => Update ((t ': ts) :: [Type]) where
-    update tyMap char matchKind matchState = let
+    update = \tyMap char matchKind matchState -> let
         (currentSt, tyMapRest) = TypeMap.splitHead tyMap
         newCurrentState        = updateMetric currentSt char matchKind matchState
         updatedRest            = update tyMapRest char matchKind matchState
@@ -164,7 +164,7 @@ class States ts => Get (ts :: [Type]) where
 
 instance (TypeMap.SplitHead t ts, State t, States ts, Get ts)
     => Get ((t ': ts) :: [Type]) where
-    get tyMap matchState = let
+    get = \tyMap matchState -> let
         (currentSt, tyMapRest) = TypeMap.splitHead tyMap
         restScore              = get tyMapRest matchState
         currentScore           = getMetric currentSt matchState
