@@ -24,7 +24,7 @@ import Searcher.Engine.Data.Index             ( Index )
 import Searcher.Engine.Data.Match             ( Match (Match) )
 import Searcher.Engine.Data.Result            ( Result (Result) )
 import Searcher.Engine.Data.Score             ( Score )
-import Searcher.Engine.Metric                 ( Metric )
+import Searcher.Engine.Metric                 ( Metric, Metrics )
 import Searcher.Engine.Metric.MismatchPenalty ( MismatchPenalty )
 import Searcher.Engine.Metric.PrefixBonus     ( PrefixBonus )
 import Searcher.Engine.Metric.SequenceBonus   ( SequenceBonus )
@@ -32,6 +32,8 @@ import Searcher.Engine.Metric.SuffixBonus     ( SuffixBonus )
 import Searcher.Engine.Metric.WordPrefixBonus ( WordPrefixBonus )
 import Searcher.Engine.Metric.WordSuffixBonus ( WordSuffixBonus )
 
+
+-- Pre-integration perf for matchQuery ~= 70ms
 
 ------------- Testing --------------------------
 
@@ -44,7 +46,7 @@ type MyMetrics =
      , WordSuffixBonus ]
 
 myMetricSt2 :: TypeMap.TypeMap MyMetrics
-myMetricSt2 = Metric.genMetrics
+myMetricSt2 = Metric.make
 
 val :: MismatchPenalty
 val = TypeMap.getElem @MismatchPenalty myMetricSt2
@@ -67,8 +69,8 @@ val3 = TypeMap.splitHead myMetricSt2
 
 -- === API === --
 
-search :: forall a b . (SearcherData a, Metric b) => Text -> Database a
-    -> (a -> Double) -> b -> [Result a]
+search :: forall a ts . (SearcherData a, Metric ts) => Text -> Database a
+    -> (a -> Double) -> ts -> [Result a]
 search = \query database hintWeightGetter metricSt -> let
     root    = database ^. Database.tree
     hints   = database ^. Database.hints
