@@ -2,7 +2,7 @@
 
 module Searcher.Engine.Data.Tree where
 
-import Prologue hiding (Index, lookup)
+import Prologue hiding (Index, lookup, index)
 
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict            as Map
