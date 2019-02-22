@@ -184,6 +184,7 @@ main = let
     cfg = defaultConfig { Options.resamples = 100 }
     in defaultMainWith cfg
         [ bgroup   "tree"   benchTree
+        , bgroup   "db"     benchDb
         , bgroup   "search" benchSearch
         ]
 
@@ -213,6 +214,14 @@ benchTree = benchmarks where
             test_lookupNode
         ]
 {-# INLINE benchTree #-}
+
+benchDb :: [Benchmark]
+benchDb = benchmarks where
+    benchmarks =
+        [ bgroup "create" benchCreate ]
+    benchCreate =
+        [ envBench "mk" (pure textInput) Database.mk
+        , envBench "insertMultiple" (pure (textInput, Database.mk [])) $ uncurry Database.insertMultiple ]
 
 benchSearch :: [Benchmark]
 benchSearch =

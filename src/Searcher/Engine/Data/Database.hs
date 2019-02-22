@@ -61,17 +61,7 @@ nextIndex database = Map.size hints' where
 {-# INLINE nextIndex #-}
 
 mk :: SearcherData a => [a] -> Database a
-mk input = Database hints' root where
-    toTxt          = \h -> h ^. text
-    txtInput       = toTxt <$> input
-    mkTree         = Tree.mk txtInput
-    (root, txtMap) = State.runState @IndexMap mkTree mempty
-    insertHint     = \acc hint -> let
-        txt = hint ^. text
-        in case Map.lookup txt txtMap of
-            Nothing  -> acc
-            Just idx -> Map.insertWith (<>) idx [hint] acc
-    hints' = foldl' insertHint mempty input
+mk = flip insertMultiple def
 {-# INLINE mk #-}
 
 textMap :: SearcherData a => Getter (Database a) IndexMap
@@ -86,20 +76,22 @@ textMap = to $ \d -> let
 {-# INLINE textMap #-}
 
 insert :: SearcherData a => a -> Database a -> Database a
-insert hint database = let
-    txtMap  = database ^. textMap
-    hintTxt = hint ^. text
-    root    = database ^. tree
-    insert' = Tree.insert hintTxt root
-    (root', txtMap') = State.runState @IndexMap insert' txtMap
-    mayIdx = Map.lookup hintTxt txtMap'
-    updateHints = \idx hintMap -> Map.insertWith (<>) idx [hint] hintMap
-    in database
-        & hints %~ maybe id updateHints mayIdx
-        & tree  .~ root'
+insert = insertMultiple . pure
 {-# INLINE insert #-}
 
 insertMultiple :: SearcherData a => [a] -> Database a -> Database a
-insertMultiple input database = foldl (flip insert) database input
+insertMultiple = \hintsToAdd database -> let
+    txtMap           = database ^. textMap
+    txtInputs        = view text <$> hintsToAdd
+    root             = database ^. tree
+    insert'          = Tree.insertMultiple txtInputs root
+    (root', txtMap') = State.runState @IndexMap insert' txtMap
+    insertHint       = \acc hint -> let
+        txt = hint ^. text
+        in case Map.lookup txt txtMap' of
+            Nothing  -> acc
+            Just idx -> Map.insertWith (<>) idx [hint] acc
+    oldHints = database ^. hints
+    newHints = foldl' insertHint oldHints hintsToAdd
+    in Database newHints root'
 {-# INLINE insertMultiple #-}
-
